@@ -58,6 +58,12 @@ namespace PlantPeek
         internal static ConfigEntry<float> HoverBackgroundAlpha;
         internal static ConfigEntry<bool> VerboseLogging;
 
+        // Mod Menu reads these out of ConfigDescription.Tags to title its sections. Display
+        // names only - the .cfg section keys are untouched, since renaming one there would
+        // orphan every saved value.
+        private const string HoverSection = "ModMenu.Section=Hover panel";
+        private const string DiagnosticsSection = "ModMenu.Section=Diagnostics";
+
         private void Awake()
         {
             Log = Logger;
@@ -120,19 +126,31 @@ namespace PlantPeek
 
             HoverHeight = Config.Bind(
                 "Hover", "HoverHeight", 0.8f,
-                "Height above the plant, in world units.");
+                new ConfigDescription(
+                    "Height above the plant, in world units.",
+                    new AcceptableValueRange<float>(0f, 3f),
+                    HoverSection, "ModMenu.Label=Panel height"));
 
             HoverFontSize = Config.Bind(
                 "Hover", "HoverFontSize", 22f,
-                "Font size of the panel's first line.");
+                new ConfigDescription(
+                    "Font size of the panel's first line.",
+                    new AcceptableValueRange<float>(10f, 48f),
+                    HoverSection, "ModMenu.Label=Text size"));
 
             HoverBackgroundAlpha = Config.Bind(
                 "Hover", "HoverBackgroundAlpha", 0.3f,
-                "Opacity of the mod's own plate, 0-1. Unused with the game nameplate.");
+                new ConfigDescription(
+                    "Opacity of the mod's own plate, 0-1. Unused with the game nameplate.",
+                    new AcceptableValueRange<float>(0f, 1f),
+                    HoverSection, "ModMenu.Label=Background opacity"));
 
             VerboseLogging = Config.Bind(
                 "Diagnostics", "VerboseLogging", false,
-                "Log hover diagnostics and a one-off growth dump per crop.");
+                new ConfigDescription(
+                    "Log hover diagnostics and a one-off growth dump per crop.",
+                    null,
+                    DiagnosticsSection, "ModMenu.Label=Verbose logging"));
 
             gameObject.AddComponent<PlantHover>();
 
