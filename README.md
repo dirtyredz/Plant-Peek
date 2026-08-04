@@ -102,19 +102,23 @@ Plant-Peek/
 │   └── 01-growth-system.md    decompilation findings, and the two methods not to call
 └── src/
     ├── Directory.Build.props
-    └── PlantPeek/
-        ├── PlantPeek.csproj   builds + auto-deploys to BepInEx/plugins/MoonlightPeaksMods
-        ├── Plugin.cs          BepInEx entry point and config
-        ├── GrowthReader.cs    read-only model: plant → stage, water, day estimate
-        ├── Requirements.cs    stage exit conditions → readable met/unmet lines
-        ├── InteractionTarget.cs  the plant the game itself is pointing at
-        ├── Hotkey.cs          key checks that survive a held movement key
-        ├── Diagnostics.cs     one-off per-crop growth dump, behind VerboseLogging
-        ├── PlantHover.cs      world hover UI, adapted from ChestLabels/HoverLabel.cs
-        ├── GameFonts.cs       ┐
-        ├── GamePalette.cs     ├ copied verbatim from ChestLabels — fix bugs in both
-        └── PanelSprite.cs     ┘
+    ├── PlantPeek.csproj       builds + auto-deploys to BepInEx/plugins/MoonlightPeaksMods
+    ├── Plugin.cs              BepInEx entry point and config
+    ├── GrowthReader.cs        read-only model: plant → stage, water, day estimate
+    ├── Requirements.cs        stage exit conditions → readable met/unmet lines
+    ├── StageGraph.cs          stage position, walking growth paths only
+    ├── InteractionTarget.cs   the plant the game itself is pointing at
+    ├── Hotkey.cs              key checks that survive a held movement key
+    ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
+    ├── PlantHover.cs          world hover UI, adapted from ChestLabels/HoverLabel.cs
+    ├── GameFonts.cs           ┐
+    ├── GamePalette.cs         ├ copied verbatim from ChestLabels — fix bugs in both
+    └── PanelSprite.cs         ┘
 ```
+
+There is no project subdirectory under `src/`: this mod is a single project, so the extra level
+named after the mod said nothing. Chest Labels keeps one because it has two projects to
+separate.
 
 ## Visual integration
 
@@ -176,7 +180,7 @@ mod exists to describe. So a miss falls through to the mouse raycast rather than
 ## Building
 
 ```bash
-dotnet build "src/PlantPeek/PlantPeek.csproj"
+dotnet build "src/PlantPeek.csproj"
 ```
 
 Deploys to `BepInEx\plugins\MoonlightPeaksMods\PlantPeek` automatically. Pass
