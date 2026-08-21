@@ -14,7 +14,7 @@ namespace PlantPeek
         public const string PluginName = "Plant Peek";
         // Keep in step with <Version> in the csproj - pack.ps1 names the archive from that one
         // and BepInEx reports this one. See 12-versioning-and-release.md.
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = ModBuildInfo.Version;
 
         /// <summary>How much a hovered plant says.</summary>
         public enum DetailLevel
