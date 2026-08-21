@@ -2,8 +2,8 @@
 
 Hover a growing plant and see where it is in its growth, and what it is waiting for.
 
-**Status:** v1.0.0 — packaged and ready to publish, pending the manual checks in
-[RELEASING.md](RELEASING.md): a fresh-config launch, six screenshots, and a save diff.
+**Status:** 🚀 **Published** — v1.0.1 live on Nexus as
+[mod 120](https://www.nexusmods.com/moonlightpeaks/mods/120). See [RELEASING.md](RELEASING.md).
 
 Build the archive with `.\pack.ps1` → `dist/PlantPeek-1.0.0.zip`.
 

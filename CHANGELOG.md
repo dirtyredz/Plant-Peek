@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1 - 2026-08-20
+
+**Fix: the plant tooltip could stop working after the Moonlight Peaks 1.2.3 update.** 1.2.3
+renamed the game's nameplate data types. Plant Peek itself was unaffected, but if another
+installed mod patched the game's nameplate and had not yet updated for 1.2.3 (for example an
+older ExtraTooltip), that mod's error would take the shared nameplate down with it and the
+tooltip would disable itself for the session.
+
+Plant Peek now guards that shared nameplate call: if another mod's patch throws, the error
+is caught so the game's own nameplate - and your tooltip - still show.
+
+This adds one small Harmony finalizer (the guard). Plant Peek remains read-only otherwise and
+still writes nothing to your save.
+
 ## 1.0.0
 
 First release.

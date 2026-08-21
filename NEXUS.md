@@ -1,10 +1,15 @@
 # Nexus Page Copy
 
-Paste-ready copy for the mod page, plus the shot list.
+> **Pasting into the upload form? Use [nexus-paste.md](nexus-paste.md), not this file.**
+> The copy here is wrapped for reading, and the editor turns every wrap into a `<br>`.
+> See [13-nexus-page-standard.md](../../13-nexus-page-standard.md).
+
+Reference copy for the mod page, plus the shot list.
 
 **Category:** User Interface
 **Tags:** Quality of Life, Utilities for Players
-**Requirements:** BepInEx 5.4.23.5
+**Requirements:** BepInEx 5 (win_x64), 5.4.23.5 or newer
+**Nexus page:** [mod 120](https://www.nexusmods.com/moonlightpeaks/mods/120)
 
 ---
 
@@ -42,11 +47,22 @@ behind if you uninstall.
 
 ## Field: Installation instructions
 
-1. Install **BepInEx 5 (win_x64)** into your Moonlight Peaks folder
+**With Vortex**
+
+Open the Files tab, click the Vortex button, and enable the mod. Done.
+
+**Manually**
+
+1. Install **BepInEx 5 (win_x64)** into your Moonlight Peaks folder, if you do not have it
+   already. The BepInEx folder sits beside Moonlight Peaks.exe.
 2. Launch the game once, then quit — this creates the `BepInEx/plugins` folder
-3. Download Plant Peek and extract the archive **over your Moonlight Peaks folder**, so the
-   DLL lands in `BepInEx/plugins/PlantPeek/`
+3. Download Plant Peek from the Files tab and extract the archive **over your Moonlight Peaks
+   folder**, so the file ends up at `BepInEx/plugins/PlantPeek/PlantPeek.dll`
 4. Launch the game
+
+Settings are written to `BepInEx/config/com.dirtyredz.moonlightpeaks.plantpeek.cfg` on first
+launch. With **Mod Nook** installed you never need to open it — every setting appears under
+**Pause > Mod Nook** and applies immediately, without a restart.
 
 To uninstall, delete `BepInEx/plugins/PlantPeek`. Nothing is written to your save, so there is
 nothing else to clean up.
@@ -71,25 +87,42 @@ nothing else to clean up.
 
 ## Field: Requirements
 
-- **BepInEx 5 (win_x64)** — required
-- **Mod Menu** — optional, for changing settings in-game instead of editing a config file
-- PC/Steam only. The Switch and mobile builds can't load BepInEx.
+**Required**
+
+- **BepInEx 5 (win_x64)**, version 5.4.23.5 or newer
+
+**Recommended companion**
+
+- **Mod Nook** — my in-game settings menu. Plant Peek has a lot of knobs, and this is where
+  they are readable: rebind the peek key by pressing it, recolour the banner with a picker,
+  and set the detail level from a list instead of typing a word into a file. Nothing here
+  needs it. https://www.nexusmods.com/moonlightpeaks/mods/127
+- **Mod Menu** by Elsiabeth does the same job and is also supported. Mod Nook and Mod Menu
+  can both be installed — each adds its own button and neither interferes with the other.
+
+PC/Steam only. The Switch and mobile builds can't load BepInEx.
+
+**Compatibility**
 
 Plays nicely with **Extra Tooltip** and **Farming QoL** — those cover menus and icons, this
 covers pointing at the plant itself. Requirement checks call the game's own code, so mods that
 change growth rules, like **Endless Harvest**, are reflected correctly rather than contradicted.
 
+Sits alongside **Last Swing** happily: this one tells you how a crop is doing when you hover
+it, that one tells you how many swings a tree or rock has left while you chop.
+
 ## Field: Shout outs
 
 - **Little Chicken Game Company**, for a game whose code is clean enough to read and whose
   growth system turned out to be far more interesting than a timer.
-- **BepInEx** and **HarmonyX**, which every mod here stands on.
+- The **BepInEx** and **HarmonyX** teams, which every mod here stands on.
 - **Elsiabeth**, for **Mod Menu** — settings in-game instead of a text file is the difference
   between a config being used and being ignored.
 - **entchen66's Extra Tooltip** and **Elsiabeth's Farming QoL**, which cover the menu and icon
   side of this so thoroughly that the gap left over was worth building.
 - The **Moonlight Peaks wiki modding guides**, which are genuinely good and saved a lot of
   guessing.
+- **My Mate**, for being my inspiration.
 
 ---
 

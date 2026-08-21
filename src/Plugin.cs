@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using HarmonyLib;
 using UnityEngine;
 
 namespace PlantPeek
@@ -13,7 +14,7 @@ namespace PlantPeek
         public const string PluginName = "Plant Peek";
         // Keep in step with <Version> in the csproj - pack.ps1 names the archive from that one
         // and BepInEx reports this one. See 12-versioning-and-release.md.
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.0.1";
 
         /// <summary>How much a hovered plant says.</summary>
         public enum DetailLevel
@@ -153,6 +154,10 @@ namespace PlantPeek
                     DiagnosticsSection, "ModMenu.Label=Verbose logging"));
 
             gameObject.AddComponent<PlantHover>();
+
+            // Guard the shared NameplateScreen.Show against a broken foreign patch (e.g. an
+            // outdated ExtraTooltip) so our nameplate keeps working. See NameplateGuard.
+            new Harmony(PluginGuid).PatchAll(typeof(NameplateGuard));
 
             Log.LogInfo($"{PluginName} {PluginVersion} loaded. Read-only: nothing is written to your save.");
             Log.LogInfo($"Hovering a plant shows: {Detail.Value}. {DescribeExpandTrigger()}");
