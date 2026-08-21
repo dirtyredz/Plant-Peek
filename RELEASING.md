@@ -20,9 +20,8 @@ Note that is **not** the dev deploy path. `dotnet build` deploys to
 the plain `plugins/PlantPeek/` layout. `pack.ps1` builds with `SkipDeploy=true`, so packaging
 never overwrites the copy under test.
 
-The script reads the version from the csproj and **refuses to pack if `Plugin.cs` disagrees** —
-the two are reported to players separately, and a mismatch means an archive that lies about
-what is inside it.
+The script reads the version from the csproj; `Plugin.cs` derives the same value at build time via
+`ModBuildInfo.Version`, so the archive name and the version the DLL reports can never disagree.
 
 ## No test project, on purpose
 
@@ -40,7 +39,7 @@ Automated checks, verified for 1.0.0:
 - [x] **Colour** — no colour literals outside `GamePalette.cs` and `PanelSprite.cs`
 - [x] **Shape** — the panel is the game's own nameplate banner; the fallback plate is 9-sliced
       and rounded, never a flat rectangle
-- [x] **Versions agree** — csproj `1.0.0`, `PluginVersion` `1.0.0`
+- [x] **Version set in the csproj** — `Plugin.cs` derives it via `ModBuildInfo.Version`
 - [x] **CHANGELOG** has exactly one entry for this version
 - [x] **Diagnostics off** — `VerboseLogging` defaults to `false`
 - [x] **Save-safe** — no Harmony patches, no writes; the requirement allowlist exists precisely
@@ -63,8 +62,8 @@ Still to do by hand before publishing:
 
 - **Version 1.0.0.** The mod is feature-complete and the API surface is settled, so this is a
   first release rather than a preview. Chest Labels opened at 0.6.0 because it had shipped
-  iterations behind it; this has not. Change it in the csproj *and* `Plugin.cs` if you would
-  rather open lower — `pack.ps1` enforces that they match.
+  iterations behind it; this has not. Change the csproj `<Version>` if you would
+  rather open lower — `Plugin.cs` derives from it.
 - **Localisation.** All strings are English literals in `PlantHover` and `Requirements`. The
   game exposes `LocalizationLibrary.Translate` with kebab-case keys, but there are no keys for
   this mod's wording. Worth doing if the mod finds an audience.
