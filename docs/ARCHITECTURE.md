@@ -42,7 +42,8 @@ Runs every frame; two cadences:
 
 `GrowthReader.Read` assembles one immutable-ish snapshot per poll from a `GrowableView`:
 
-- **Identity:** `Name` (produce name if `UseProduceName`, else the planted-seed name).
+- **Identity:** `PlantedItemName` (the seed) and `ProduceName` (what it yields, or null) — the model
+  reports both raw; `PanelText.ResolveName` applies `UseProduceName` to pick which one to show.
 - **Position in growth:** `StageNumber`/`StageCount` from `StageGraph` (BFS over *growth* paths only,
   excluding chop/spread paths; a `visited` set terminates regrow loops), `IsFullyGrown`, `IsStump`.
 - **Harvest:** `ReadyToHarvest` (from `PlantHarvestableView.IsHarvestable`, not the interactable),

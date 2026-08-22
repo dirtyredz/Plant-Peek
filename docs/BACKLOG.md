@@ -39,19 +39,28 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   urgent.
 - [x] **P2-a — Stop the model leaking presentation/diagnostics config.** ✅ Done 2026-08-22 — `PlantInfo`
   now carries both `PlantedItemName` + `ProduceName` and `PanelText.ResolveName` makes the `UseProduceName`
-  choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `Diagnostics.WarnMissingWaterOnce`
-  (self-gated on `VerboseLogging`). `GrowthReader` now reads no presentation/diagnostics config.
+  choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `WaterDiagnostics.WarnMissingWaterOnce`
+  (self-gated on `VerboseLogging`). Landed in its own file rather than `Diagnostics` because `Diagnostics`
+  already calls `GrowthReader.ReadStageCosts`, so co-locating would have made model↔diagnostics a cycle
+  (caught by the componentization review). `GrowthReader` now reads no presentation/diagnostics config.
   Compile-verified.
 - [x] **P2-b — `StageGraph.Measure` returns a `StageMeasurement`.** ✅ Done 2026-08-22 — `Measure` now
   returns a `StageMeasurement` (StageNumber/StageCount/IsFullyGrown) and `GrowthReader.Read` copies it
   onto `PlantInfo`, removing the wrong-direction dependency of the graph utility on one consumer's
-  aggregate. Compile-verified. (Promoting `PlantInfo` to its own file left for the P2-a pass.)
-- [ ] **P2-c — Latent sub-file seams in `GrowthReader`** (471 lines, cohesive today): a `GrowthTiming`
+  aggregate. Compile-verified. (Promoting `PlantInfo` to its own file was *not* done here and is still
+  deferred — folded into P2-c, which already eyes `GrowthReader` sub-file seams.)
+- [ ] **P2-c — Latent sub-file seams in `GrowthReader`** (438 lines, cohesive today): a `GrowthTiming`
   (`EstimateDaysLeft` + `ReadStageCosts`, already a 2nd caller in `Diagnostics`) and a `WaterState`
-  facet. Do only if the file grows past ~600 lines.
+  facet; also the `PlantInfo` model type could move to its own file here. Do only if the file grows past
+  ~600 lines.
 - [ ] **P2-d — Dedup addon/stage resolution** shared by `GrowthReader.Read` and `Diagnostics.LogPlantOnce`
   (`view.GridObjectPersistence.ItemAsset → GrowableAddon → GrowStageContainer.CachedGrowStages`) behind a
   `TryResolveAddon`/`ReadStages` helper.
+- [ ] **P2-g — "log once per crop" idiom** (`HashSet<string>` keyed by item name, add-then-log) now
+  appears in both `Diagnostics.LogPlantOnce` and `WaterDiagnostics.WarnMissingWaterOnce`. Two ~3-line
+  copies in separate files — a shared `LogOncePerCrop(set, key, Action)` helper is tempting but borders
+  on over-abstraction for two callers, and a shared home would re-couple the two diagnostics. Left as-is;
+  revisit only if a third caller appears.
 - [ ] **P2-e — Verify authored `GrowthTime` parameter order** — the day estimate assumes GrowthTime item
   parameters are in stage order (inferred, not proven). Use `VerboseLogging`'s growth dump against real
   crops to confirm/adjust. (Pre-existing known-unknown, see README.)

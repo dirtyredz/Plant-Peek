@@ -109,11 +109,15 @@ Plant-Peek/
     ├── GrowthReader.cs        read-only model: plant → stage, water, day estimate
     ├── Requirements.cs        stage exit conditions → readable met/unmet lines
     ├── StageGraph.cs          stage position, walking growth paths only
+    ├── GrowthPaths.cs         one definition of "is this path growth?" (shared by the two above)
     ├── InteractionTarget.cs   the plant the game itself is pointing at
     ├── Hotkey.cs              key checks that survive a held movement key
     ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
+    ├── WaterDiagnostics.cs    once-per-crop "why no watered line" warning, behind VerboseLogging
     ├── NameplateGuard.cs      Harmony finalizer shielding the shared nameplate
-    ├── PlantHover.cs          world hover UI, adapted from ChestLabels/HoverLabel.cs
+    ├── PlantHover.cs          world hover orchestration, adapted from ChestLabels/HoverLabel.cs
+    ├── PlantTargeting.cs      resolves the camera and the plant under the cursor
+    ├── GameNameplateBridge.cs draws the panel in the game's own nameplate banner
     ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
     ├── GameFonts.cs           ┐
     ├── GamePalette.cs         ├ copied verbatim from ChestLabels — fix bugs in both

@@ -283,7 +283,7 @@ namespace PlantPeek
             var waterable = FindWaterable(view);
             if (waterable?.WaterablePersistence == null)
             {
-                Diagnostics.WarnMissingWaterOnce(view, "no waterable tile found at the plant's position");
+                WaterDiagnostics.WarnMissingWaterOnce(view, "no waterable tile found at the plant's position");
                 return null;
             }
 
@@ -293,7 +293,7 @@ namespace PlantPeek
             var waterType = addon.RequiredWaterType ?? waterable.RequiredWaterType;
             if (waterType == null)
             {
-                Diagnostics.WarnMissingWaterOnce(view, "no required water type on the crop or the tile");
+                WaterDiagnostics.WarnMissingWaterOnce(view, "no required water type on the crop or the tile");
                 return null;
             }
 
