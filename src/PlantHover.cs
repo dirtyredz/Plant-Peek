@@ -1,8 +1,6 @@
 using System;
 using Chicken.UI;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace PlantPeek
 {
@@ -12,19 +10,18 @@ namespace PlantPeek
     /// Structure and every gotcha handled here were established by Chest Labels' HoverLabel:
     /// the game has no hover system to hook, Camera.main is null, and world UI has to be gated
     /// on PlayerCursorInteractionScreen. See mods/ChestLabels/src/ChestLabels/HoverLabel.cs.
+    ///
+    /// Orchestration only: it polls, decides when to show and at what detail, projects the
+    /// plant's world point to the screen, and hands the result to the two drawers - the mod's
+    /// own <see cref="PlantHoverPanel"/> and the <see cref="GameNameplateBridge"/>.
     /// </summary>
     internal sealed class PlantHover : MonoBehaviour
     {
         private const float PollInterval = 0.08f;
-        private const float OutlineWidth = 0.3f;
 
         private readonly PlantTargeting targeting = new PlantTargeting();
         private readonly GameNameplateBridge nameplate = new GameNameplateBridge();
-
-        private Canvas canvas;
-        private RectTransform plateRect;
-        private Image plateBackground;
-        private TextMeshProUGUI text;
+        private readonly PlantHoverPanel panel = new PlantHoverPanel();
 
         private float nextPollTime;
 
@@ -182,24 +179,18 @@ namespace PlantPeek
             EnsureUi();
             var body = PanelText.Format(info, level);
 
-            canvas.gameObject.SetActive(true);
+            panel.Activate();
 
             if (GameNameplateBridge.Available)
             {
                 // The game nameplate draws itself; take our own fallback plate down while it does.
-                plateRect.gameObject.SetActive(false);
+                panel.HidePlate();
                 nameplate.Show(plant, body);
             }
             else
             {
                 nameplate.Hide();
-                plateRect.gameObject.SetActive(true);
-                text.text = body;
-
-                // Re-applied on every show so tuning these in the .cfg takes effect without a
-                // restart - the UI objects themselves are only built once.
-                ApplyStyle();
-                FitPlateToText();
+                panel.ShowPlate(body);
             }
 
             Reposition();
@@ -221,7 +212,7 @@ namespace PlantPeek
 
         private void Reposition()
         {
-            if (canvas == null || hoveredPlant == null || !canvas.gameObject.activeSelf)
+            if (!panel.IsActive || hoveredPlant == null)
             {
                 return;
             }
@@ -232,49 +223,20 @@ namespace PlantPeek
                 return;
             }
 
-            var anchor = hoveredPlant.transform.position + Vector3.up * PlantPeekPlugin.HoverHeight.Value;
-            var screenPoint = camera.WorldToScreenPoint(anchor);
+            var worldPoint = hoveredPlant.transform.position + Vector3.up * PlantPeekPlugin.HoverHeight.Value;
+            var screenPoint = camera.WorldToScreenPoint(worldPoint);
 
             if (screenPoint.z < 0f)
             {
                 // Behind the camera.
-                canvas.gameObject.SetActive(false);
+                panel.Deactivate();
                 return;
             }
 
-            plateRect.position = screenPoint;
+            // Projection is the orchestrator's job (only it has the camera and the plant); each
+            // drawer applies the screen point to its own object.
+            panel.PositionAt(screenPoint);
             nameplate.Reposition(screenPoint);
-        }
-
-        private void ApplyStyle()
-        {
-            // The plate's colours live in the generated sprite, so tinting it white keeps them
-            // as authored; only the alpha is a user setting.
-            var alpha = Mathf.Clamp01(PlantPeekPlugin.HoverBackgroundAlpha.Value);
-            plateBackground.color = new Color(1f, 1f, 1f, alpha);
-            plateBackground.enabled = alpha > 0.003f;
-
-            text.fontSize = PlantPeekPlugin.HoverFontSize.Value;
-
-            // Only hand-roll an outline when the game's outline preset was not found -
-            // otherwise this would fight the material GameFonts just applied.
-            if (GameFonts.OutlineMaterial == null)
-            {
-                text.outlineWidth = OutlineWidth;
-            }
-        }
-
-        /// <summary>
-        /// The panel is one to five lines depending on detail level, so the plate is measured
-        /// from the text rather than given a fixed size. Auto-sizing is off for the same
-        /// reason - it would shrink the expanded panel to fit a box built for the short one.
-        /// </summary>
-        private void FitPlateToText()
-        {
-            text.ForceMeshUpdate();
-            plateRect.sizeDelta = new Vector2(
-                text.preferredWidth + 24f,
-                text.preferredHeight + 12f);
         }
 
         /// <summary>
@@ -283,76 +245,17 @@ namespace PlantPeek
         private void HidePanel()
         {
             nameplate.Hide();
-
-            if (canvas != null)
-            {
-                canvas.gameObject.SetActive(false);
-            }
+            panel.Deactivate();
         }
 
+        /// <summary>
+        /// Builds the fallback-plate canvas once, then parks the game-nameplate anchor under the
+        /// same screen-space overlay so both draw against the same coordinate host.
+        /// </summary>
         private void EnsureUi()
         {
-            if (canvas != null)
-            {
-                return;
-            }
-
-            var canvasGo = new GameObject("PlantPeek_HoverCanvas");
-            canvasGo.transform.SetParent(transform, false);
-            DontDestroyOnLoad(canvasGo);
-
-            canvas = canvasGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            // Above normal UI but below anything that deliberately claims the top.
-            canvas.sortingOrder = 500;
-            canvasGo.AddComponent<CanvasScaler>();
-
-            var plate = new GameObject("Plate");
-            plate.transform.SetParent(canvasGo.transform, false);
-
-            plateRect = plate.AddComponent<RectTransform>();
-            plateRect.sizeDelta = new Vector2(260f, 64f);
-            plateRect.pivot = new Vector2(0.5f, 0.5f);
-
-            plateBackground = plate.AddComponent<Image>();
-            // A flat rectangle is the single thing that reads as bolted-on; the game's panels
-            // are all rounded with a lighter rim. PanelSprite generates a 9-sliced one in the
-            // game's palette, so the corners hold their radius at any panel size.
-            plateBackground.sprite = PanelSprite.Get();
-            plateBackground.type = Image.Type.Sliced;
-            plateBackground.color = new Color(1f, 1f, 1f, 0f);
-            plateBackground.raycastTarget = false;
-
-            var textGo = new GameObject("Text");
-            textGo.transform.SetParent(plate.transform, false);
-
-            var textRect = textGo.AddComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(8f, 3f);
-            textRect.offsetMax = new Vector2(-8f, -3f);
-
-            text = textGo.AddComponent<TextMeshProUGUI>();
-            text.alignment = TextAlignmentOptions.Center;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.raycastTarget = false;
-            text.color = GamePalette.NameCream;
-            text.outlineColor = GamePalette.Ink;
-            text.enableAutoSizing = false;
-            text.fontSize = PlantPeekPlugin.HoverFontSize.Value;
-
-            // Gelica plus the game's own outline preset. TMP_Settings.defaultFontAsset is a
-            // last-resort fallback inside Apply, never the intended path - Chest Labels
-            // shipped to Nexus with the stock TMP font on exactly this element because its
-            // own canvas has no neighbour to inherit from. See 10-visual-integration.md.
-            GameFonts.Apply(text, preferOutline: true);
-
-            // The game's nameplate anchors to a RectTransform rather than a screen point; the
-            // bridge parks an invisible one under this canvas, repositioned each frame.
-            nameplate.EnsureAnchor(canvasGo.transform);
-
-            canvasGo.SetActive(false);
-            PlantPeekPlugin.Log.LogInfo("Plant hover canvas created.");
+            var canvasRoot = panel.EnsureBuilt(transform);
+            nameplate.EnsureAnchor(canvasRoot);
         }
     }
 }

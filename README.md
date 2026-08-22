@@ -117,6 +117,7 @@ Plant-Peek/
     ├── NameplateGuard.cs      Harmony finalizer shielding the shared nameplate
     ├── PlantHover.cs          world hover orchestration, adapted from ChestLabels/HoverLabel.cs
     ├── PlantTargeting.cs      resolves the camera and the plant under the cursor
+    ├── PlantHoverPanel.cs     the mod's own fallback plate (canvas, style, fit, position)
     ├── GameNameplateBridge.cs draws the panel in the game's own nameplate banner
     ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
     ├── GameFonts.cs           ┐

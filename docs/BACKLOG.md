@@ -32,11 +32,14 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   if the base type is confirmed cheaply.
 
 ## P2 — nice-to-have
-- [ ] **P2-f — Extract `PlantHoverPanel` (the fallback plate) from `PlantHover`.** The last sub-seam:
-  `EnsureUi` (canvas/plate/text build), `ApplyStyle`, `FitPlateToText`, and the plate half of
-  `Reposition`. Deferred behind P1-a because `Reposition` drives both the plate and the (now bridge-owned)
-  nameplate anchor — decide who owns positioning. `PlantHover` is 358 lines now, so this is polish, not
-  urgent.
+- [x] **P2-f — Extract `PlantHoverPanel` (the fallback plate) from `PlantHover`.** ✅ Done 2026-08-22 —
+  canvas/plate/text build, style, fit, and plate positioning now live in `PlantHoverPanel`; `PlantHover`
+  keeps the poll loop and the world→screen projection and hands the screen point to both drawers.
+  Positioning decision: the **orchestrator projects** (only it has camera + plant), each **drawer applies**
+  the point to its own object — so `PlantHover.Reposition` calls `panel.PositionAt` and
+  `nameplate.Reposition`. The nameplate anchor still parents under the panel's canvas (its coordinate
+  host), wired by the orchestrator so `PlantHoverPanel` stays unaware of the nameplate. `PlantHover`
+  795 → 261 lines. Compile-verified.
 - [x] **P2-a — Stop the model leaking presentation/diagnostics config.** ✅ Done 2026-08-22 — `PlantInfo`
   now carries both `PlantedItemName` + `ProduceName` and `PanelText.ResolveName` makes the `UseProduceName`
   choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `WaterDiagnostics.WarnMissingWaterOnce`
