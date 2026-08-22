@@ -24,9 +24,6 @@ namespace PlantPeek
         private static System.Reflection.FieldInfo sourceContextField;
         private static bool unavailable;
 
-        /// <summary>True while the game's interaction target is readable.</summary>
-        internal static bool IsAvailable => !unavailable;
-
         internal static GrowableView FindPlant()
         {
             if (unavailable)
