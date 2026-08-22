@@ -82,8 +82,10 @@ destroying it with a scythe. `Hold` (Left Alt) is the default for that reason.
 
 ## Save safety
 
-**Read-only.** No persistence layer, no sidecar file, no Harmony patch — the mod only reads
-public properties and calls the game's own requirement checks. The one exception is documented
+**Read-only.** No persistence layer, no sidecar file, and no Harmony patch that touches your
+save — the mod only reads public properties and calls the game's own requirement checks. Its one
+Harmony patch is `NameplateGuard`, a finalizer that suppresses another mod's broken
+`NameplateScreen.Show` postfix; it writes nothing. The one exception is documented
 and deliberately avoided: `RandomChanceGrowStageRequirement.IsRequirementCompleted` consumes
 Unity's global RNG, so it is never called. Details in the research notes.
 
@@ -110,7 +112,9 @@ Plant-Peek/
     ├── InteractionTarget.cs   the plant the game itself is pointing at
     ├── Hotkey.cs              key checks that survive a held movement key
     ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
+    ├── NameplateGuard.cs      Harmony finalizer shielding the shared nameplate
     ├── PlantHover.cs          world hover UI, adapted from ChestLabels/HoverLabel.cs
+    ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
     ├── GameFonts.cs           ┐
     ├── GamePalette.cs         ├ copied verbatim from ChestLabels — fix bugs in both
     └── PanelSprite.cs         ┘
@@ -164,8 +168,9 @@ Worth keeping the findings, since the same ground gets retrodden:
   the copy keeps whatever alpha and scale it was cloned at. Call `Show()` on the copy's own
   widget rather than forcing alpha.
 
-With this gone the mod has **no Harmony patches at all** — `HarmonyLib` is used only for
-`AccessTools` reflection in `InteractionTarget`.
+With this gone the mod's only Harmony patch is `NameplateGuard` (a finalizer that shields the
+shared nameplate from another mod's broken postfix — see `src/NameplateGuard.cs`); `HarmonyLib`
+is otherwise used only for `AccessTools` reflection in `InteractionTarget`.
 
 ## Targeting
 
