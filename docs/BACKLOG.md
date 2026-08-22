@@ -37,10 +37,11 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   `Reposition`. Deferred behind P1-a because `Reposition` drives both the plate and the (now bridge-owned)
   nameplate anchor — decide who owns positioning. `PlantHover` is 358 lines now, so this is polish, not
   urgent.
-- [ ] **P2-a — Stop the model leaking presentation/diagnostics config.** `GrowthReader.ResolveName` reads
-  `UseProduceName` and `WarnOnce` reads `VerboseLogging`. Store both `PlantedItemName` + `ProduceName` on
-  `PlantInfo` and let `PanelText` choose; move `WarnOnce`/`CountWaterables`/`WarnedCrops` into
-  `Diagnostics`.
+- [x] **P2-a — Stop the model leaking presentation/diagnostics config.** ✅ Done 2026-08-22 — `PlantInfo`
+  now carries both `PlantedItemName` + `ProduceName` and `PanelText.ResolveName` makes the `UseProduceName`
+  choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `Diagnostics.WarnMissingWaterOnce`
+  (self-gated on `VerboseLogging`). `GrowthReader` now reads no presentation/diagnostics config.
+  Compile-verified.
 - [x] **P2-b — `StageGraph.Measure` returns a `StageMeasurement`.** ✅ Done 2026-08-22 — `Measure` now
   returns a `StageMeasurement` (StageNumber/StageCount/IsFullyGrown) and `GrowthReader.Read` copies it
   onto `PlantInfo`, removing the wrong-direction dependency of the graph utility on one consumer's

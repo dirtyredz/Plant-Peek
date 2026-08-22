@@ -34,7 +34,7 @@ namespace PlantPeek
         internal static string Format(GrowthReader.PlantInfo info, PlantPeekPlugin.DetailLevel level)
         {
             var builder = new StringBuilder();
-            builder.Append(info.Name);
+            builder.Append(ResolveName(info));
 
             if (level == PlantPeekPlugin.DetailLevel.NameOnly)
             {
@@ -70,6 +70,22 @@ namespace PlantPeek
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// Which name to show. The planted item is the seed, so PlantedItemName reads "Grape
+        /// Seeds" for a vine that is very much not a seed any more. The produce is what the plant
+        /// will give you, which is the name a player means when they point at it - so
+        /// UseProduceName prefers it whenever the crop has one.
+        /// </summary>
+        private static string ResolveName(GrowthReader.PlantInfo info)
+        {
+            if (PlantPeekPlugin.UseProduceName.Value && !string.IsNullOrWhiteSpace(info.ProduceName))
+            {
+                return info.ProduceName;
+            }
+
+            return info.PlantedItemName;
         }
 
         private static string FormatStatus(GrowthReader.PlantInfo info)

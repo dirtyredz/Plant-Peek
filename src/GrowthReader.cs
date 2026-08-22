@@ -16,7 +16,17 @@ namespace PlantPeek
     {
         internal sealed class PlantInfo
         {
-            internal string Name;
+            /// <summary>
+            /// The planted item's name - the seed ("Grape Seeds"), what the game calls the
+            /// growable however mature it is.
+            /// </summary>
+            internal string PlantedItemName;
+
+            /// <summary>
+            /// What the plant will yield ("Grapes"), or null when it has no distinct produce.
+            /// The model reports both names; <see cref="PanelText"/> decides which to show.
+            /// </summary>
+            internal string ProduceName;
             /// <summary>1-based, or 0 when the current stage guid isn't in the container.</summary>
             internal int StageNumber;
             internal int StageCount;
@@ -76,7 +86,8 @@ namespace PlantPeek
 
             var info = new PlantInfo
             {
-                Name = ResolveName(itemAsset, addon),
+                PlantedItemName = itemAsset.Name,
+                ProduceName = ReadProduceName(addon),
             };
 
             var measurement = StageGraph.Measure(stages, currentStage);
@@ -126,23 +137,14 @@ namespace PlantPeek
         }
 
         /// <summary>
-        /// The planted item is the seed, so ItemAsset.Name reads "Grape Seeds" for a vine that
-        /// is very much not a seed any more. The produce asset is what the plant is going to
-        /// give you, which is the name a player means when they point at it.
+        /// The name of what this plant yields, or null when it has none or it reads blank.
+        /// Whether to prefer this over the seed name is a presentation choice PanelText makes
+        /// (see UseProduceName) - the model just reports the fact.
         /// </summary>
-        private static string ResolveName(ItemAsset itemAsset, GrowableItemAddon addon)
+        private static string ReadProduceName(GrowableItemAddon addon)
         {
-            if (PlantPeekPlugin.UseProduceName.Value)
-            {
-                var produce = addon.GetProduceItemAsset();
-                var produceName = produce?.Name;
-                if (!string.IsNullOrWhiteSpace(produceName))
-                {
-                    return produceName;
-                }
-            }
-
-            return itemAsset.Name;
+            var produceName = addon.GetProduceItemAsset()?.Name;
+            return string.IsNullOrWhiteSpace(produceName) ? null : produceName;
         }
 
         /// <summary>
@@ -281,7 +283,7 @@ namespace PlantPeek
             var waterable = FindWaterable(view);
             if (waterable?.WaterablePersistence == null)
             {
-                WarnOnce(view, "no waterable tile found at the plant's position");
+                Diagnostics.WarnMissingWaterOnce(view, "no waterable tile found at the plant's position");
                 return null;
             }
 
@@ -291,7 +293,7 @@ namespace PlantPeek
             var waterType = addon.RequiredWaterType ?? waterable.RequiredWaterType;
             if (waterType == null)
             {
-                WarnOnce(view, "no required water type on the crop or the tile");
+                Diagnostics.WarnMissingWaterOnce(view, "no required water type on the crop or the tile");
                 return null;
             }
 
@@ -322,44 +324,6 @@ namespace PlantPeek
             }
 
             return null;
-        }
-
-        private static readonly HashSet<string> WarnedCrops = new HashSet<string>();
-
-        /// <summary>
-        /// Says once per crop why the watered line is missing, rather than leaving a silent
-        /// gap in the panel that looks like the feature simply does not work.
-        /// </summary>
-        private static void WarnOnce(GrowableView view, string reason)
-        {
-            if (!PlantPeekPlugin.VerboseLogging.Value)
-            {
-                return;
-            }
-
-            var key = view.GridObjectPersistence?.ItemAsset?.name;
-            if (string.IsNullOrEmpty(key) || !WarnedCrops.Add(key))
-            {
-                return;
-            }
-
-            PlantPeekPlugin.Log.LogInfo(
-                $"[water] {key} at {view.GridObjectPersistence.Position}: no watered state - {reason}. " +
-                $"Waterables known: {CountWaterables()}.");
-        }
-
-        private static int CountWaterables()
-        {
-            var count = 0;
-            foreach (var waterable in ViewsCollection.WaterableViews.All)
-            {
-                if (waterable != null)
-                {
-                    count++;
-                }
-            }
-
-            return count;
         }
 
         /// <summary>

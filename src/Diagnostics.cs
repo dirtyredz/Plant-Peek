@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Chicken.Utilities;
 
 namespace PlantPeek
 {
@@ -74,6 +75,47 @@ namespace PlantPeek
             }
 
             PlantPeekPlugin.Log.LogInfo(builder.ToString());
+        }
+
+        private static readonly HashSet<string> WarnedWaterCrops = new HashSet<string>();
+
+        /// <summary>
+        /// Says once per crop why the watered line is missing, rather than leaving a silent gap
+        /// in the panel that looks like the feature simply does not work. Self-gated on
+        /// VerboseLogging so the read-only model can call it without knowing about diagnostics
+        /// config.
+        /// </summary>
+        internal static void WarnMissingWaterOnce(GrowableView view, string reason)
+        {
+            if (!PlantPeekPlugin.VerboseLogging.Value)
+            {
+                return;
+            }
+
+            var persistence = view?.GridObjectPersistence;
+            var key = persistence?.ItemAsset?.name;
+            if (string.IsNullOrEmpty(key) || !WarnedWaterCrops.Add(key))
+            {
+                return;
+            }
+
+            PlantPeekPlugin.Log.LogInfo(
+                $"[water] {key} at {persistence.Position}: no watered state - {reason}. " +
+                $"Waterables known: {CountWaterables()}.");
+        }
+
+        private static int CountWaterables()
+        {
+            var count = 0;
+            foreach (var waterable in ViewsCollection.WaterableViews.All)
+            {
+                if (waterable != null)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>
