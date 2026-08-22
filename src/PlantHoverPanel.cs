@@ -32,15 +32,20 @@ namespace PlantPeek
         internal bool IsActive => canvas != null && canvas.gameObject.activeSelf;
 
         /// <summary>
-        /// Build the canvas/plate/text once under the given parent and return the canvas
-        /// transform, so the caller can park the nameplate anchor under the same overlay.
-        /// Idempotent: a second call just returns the existing canvas.
+        /// The screen-space overlay both drawers position against - the plate directly, and the
+        /// game-nameplate anchor by parenting under it. Null until <see cref="EnsureBuilt"/> runs.
         /// </summary>
-        internal Transform EnsureBuilt(Transform parent)
+        internal Transform Root => canvas != null ? canvas.transform : null;
+
+        /// <summary>
+        /// Build the canvas/plate/text once under the given parent, so <see cref="Root"/> and the
+        /// plate exist. Idempotent: a second call is a no-op.
+        /// </summary>
+        internal void EnsureBuilt(Transform parent)
         {
             if (canvas != null)
             {
-                return canvas.transform;
+                return;
             }
 
             var canvasGo = new GameObject("PlantPeek_HoverCanvas");
@@ -95,8 +100,6 @@ namespace PlantPeek
 
             canvasGo.SetActive(false);
             PlantPeekPlugin.Log.LogInfo("Plant hover canvas created.");
-
-            return canvasGo.transform;
         }
 
         /// <summary>Bring the canvas up (both hover modes need it active).</summary>

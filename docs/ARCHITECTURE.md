@@ -18,7 +18,8 @@ finalizer, which writes nothing.
 Runs every frame; two cadences:
 
 - **Every frame:** expand-input (`ExpandMode.Click`/`Toggle`/`Hold`) is sampled so no click or key tap
-  is dropped between polls; the plate is repositioned so it tracks a moving camera.
+  is dropped between polls; `Reposition` projects the plant's world point once and applies that single
+  screen point to both drawers (fallback plate and nameplate anchor) so the panel tracks a moving camera.
 - **~12 Hz (80 ms gate):** the full `Poll()` — resolve target, read model, format, draw.
 
 `Poll()` steps:

@@ -254,8 +254,8 @@ namespace PlantPeek
         /// </summary>
         private void EnsureUi()
         {
-            var canvasRoot = panel.EnsureBuilt(transform);
-            nameplate.EnsureAnchor(canvasRoot);
+            panel.EnsureBuilt(transform);
+            nameplate.EnsureAnchor(panel.Root);
         }
     }
 }

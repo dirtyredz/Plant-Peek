@@ -11,9 +11,11 @@ Single-sourced version from csproj, unified `pack.ps1`, shared `Directory.Build.
 onboarding + full baseline review (2026-08-22).
 
 ## 🚧 Phase 3 — Structural cleanup (as scheduled)
-Reduce `PlantHover` further (`GameNameplateBridge`, `PlantTargeting`) and pay down the P1 debt in
-[BACKLOG.md](BACKLOG.md). Each item is independently shippable; sequence behind in-game validation for
-the behaviourally risky ones (P1-c, P1-d).
+`PlantHover` decomposition is **done**: `PanelText`, `PlantTargeting`, `GameNameplateBridge`, and
+`PlantHoverPanel` are all extracted (795 → 261 lines), and the P2 model cleanups (P2-a/b/f) have landed.
+Remaining: the P1 `NameplateGuard` scope decision (P1-c, done — kept global) and the still-open P2 tail
+in [BACKLOG.md](BACKLOG.md) (latent `GrowthReader` splits, addon/stage dedup, the log-once idiom),
+plus the in-game validations flagged there. Each item is independently shippable.
 
 ## 💤 Later — if warranted
 - Verify `GrowthTime` parameter ordering against real crops (P2-e); adjust the estimate if needed.
