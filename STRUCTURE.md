@@ -79,10 +79,10 @@ Requirements}`; `StageGraph, Requirements → GrowthPaths`. No cycles; nothing r
 ## Where to find things
 
 - A displayed string is wrong → `PanelText.cs` (wording/colour) or `GrowthReader.cs` (the fact).
-- Wrong plant targeted → `PlantHover.ResolvePlant` / `InteractionTarget.cs`.
+- Wrong plant targeted → `PlantTargeting.ResolvePlant` / `InteractionTarget.cs`.
 - A requirement shows as `?` → `Requirements.CanEvaluateSafely` (deliberate; see GOTCHAS).
 - Day estimate missing → `GrowthReader.EstimateDaysLeft` (honest-suppression rules).
-- Nameplate styling/tint → `PlantHover` nameplate methods + `GamePalette`.
+- Nameplate styling/tint → `GameNameplateBridge` + `GamePalette`.
 
 ## Structural debt
 

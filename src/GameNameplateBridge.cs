@@ -25,7 +25,7 @@ namespace PlantPeek
         /// <summary>Plant+text the nameplate is currently showing, to avoid restarting it.</summary>
         private string shownFor;
 
-        private static readonly Dictionary<Image, Color> tintedOriginals =
+        private readonly Dictionary<Image, Color> tintedOriginals =
             new Dictionary<Image, Color>();
 
         /// <summary>True when the game nameplate is both wanted and currently available.</summary>
@@ -111,7 +111,7 @@ namespace PlantPeek
         /// the original colour of every image touched is cached and restored the moment the
         /// panel goes away. Without that, the game's own nameplates inherit our tint.
         /// </summary>
-        private static void ApplyTint(NameplateScreen screen)
+        private void ApplyTint(NameplateScreen screen)
         {
             var hex = PlantPeekPlugin.NameplateTint.Value;
             if (string.IsNullOrWhiteSpace(hex) || !ColorUtility.TryParseHtmlString(hex, out var tint))
@@ -137,7 +137,7 @@ namespace PlantPeek
             }
         }
 
-        private static void RestoreTint()
+        private void RestoreTint()
         {
             if (tintedOriginals.Count == 0)
             {

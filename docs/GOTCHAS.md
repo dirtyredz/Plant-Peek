@@ -18,7 +18,7 @@ Non-obvious traps. Each: **trap → why → do instead.** Deep audit in
 ## Unity / game quirks
 
 - **`Camera.main` is null** → the gameplay camera isn't tagged `MainCamera` (Cinemachine). → Fall back to
-  the highest-depth active screen camera (`PlantHover.ResolveCamera`).
+  the highest-depth active screen camera (`PlantTargeting.ResolveCamera`).
 - **Gating the hover on an empty UI show-stack** → `EnergyScreen`/`ManaScreen` sit in it permanently, so
   it's never empty. → Gate on `PlayerCursorInteractionScreen.IsShowing` (present iff the player can point
   at the world).
