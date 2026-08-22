@@ -15,13 +15,12 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
 - [x] **P1-b — Extract `PlantTargeting` from `PlantHover`.** ✅ Done 2026-08-22 — camera resolution +
   plant raycast/interaction-target selection moved out; `PlantHover` keeps the stand-down gate and
   no-camera warning. Behaviour-preserving, compile-verified.
-- [ ] **P1-c — Scope or drop the `NameplateGuard` finalizer. ⏳ NEEDS A PRODUCT DECISION.** It currently
-  suppresses TypeLoad/TypeInit/MissingMember exceptions for *every* `NameplateScreen.Show`, regardless of
-  caller (Codex rated P0). Now that `GameNameplateBridge` owns our `Show` call, the clean fix is to
-  try/catch there and drop the global patch — but that changes behaviour: today PlantPeek incidentally
-  shields the *game's own* nameplates (and other mods') from a broken tooltip-mod postfix; scoping it
-  makes PlantPeek fix only its own panel. Decide: **be a global good-citizen (keep the patch)** vs **fix
-  only our own (scope it)**. Either way **validate in-game with and without an incompatible tooltip mod.**
+- [x] **P1-c — `NameplateGuard` finalizer scope.** ✅ Resolved 2026-08-22 — **decision: keep it global**
+  (deliberate good-citizen design). It suppresses TypeLoad/TypeInit/MissingMember exceptions for every
+  `NameplateScreen.Show`, which incidentally keeps the game's own and other mods' nameplates working when
+  a broken tooltip mod's postfix throws. Codex rated the broad scope P0, but the owner chose the safety
+  net over scoping to our own panel. Not a bug; documented in DECISIONS + GOTCHAS. Revisit only if the
+  global suppression is ever seen to mask a real failure.
 - [x] **P1-d — Centralize growth-path classification.** ✅ Done 2026-08-22 — extracted
   `GrowthPaths.IsGrowthTransition`, now used by both `StageGraph` and `Requirements`, fixing the bug
   where a chop path could outrank the real growth path (blank/wrong "waiting on"). **Still needs in-game

@@ -4,6 +4,16 @@ Design decisions worth not re-litigating. Newest first. Seeded from the README, 
 history, and the 2026-08-22 structural review; rationale is the authors' where recorded, inferred where
 noted.
 
+## 2026-08-22 — Keep `NameplateGuard` a global finalizer (don't scope it)
+**What:** `NameplateGuard` stays a global Harmony finalizer on `NameplateScreen.Show`, suppressing
+stale-reference exceptions (TypeLoad/TypeInit/MissingMember) for *all* callers, not just Plant Peek's.
+**Why:** when a broken/outdated tooltip mod throws from its own `Show` postfix, the global guard keeps the
+game's own nameplates and other mods' working too — a deliberate good-citizen safety net. The owner chose
+this over scoping the try/catch to `GameNameplateBridge.Show`.
+**Rejected:** scoping to our own panel (Codex rated the broad scope P0 for blast radius). Would be
+"cleaner" and would remove the mod's only Harmony patch, but drops the incidental protection for everyone
+else. Revisit only if the suppression is ever seen to hide a real failure.
+
 ## 2026-08-22 — Decompose the `PlantHover` God-file (P1 pass) + fix the growth-path bug
 **What:** Extracted `PlantTargeting` (camera + plant resolution) and `GameNameplateBridge` (game-nameplate
 anchor, Show/Hide keying, tint cache) out of `PlantHover` (now **358 lines**, from 795). Fixed a real bug:
