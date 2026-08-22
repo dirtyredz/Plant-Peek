@@ -19,6 +19,7 @@ namespace PlantPeek
         private const float OutlineWidth = 0.3f;
 
         private readonly PlantTargeting targeting = new PlantTargeting();
+        private readonly GameNameplateBridge nameplate = new GameNameplateBridge();
 
         private Canvas canvas;
         private RectTransform plateRect;
@@ -45,12 +46,6 @@ namespace PlantPeek
         private bool toggledOpen;
 
         private bool loggedExpanded;
-
-        /// <summary>Invisible RectTransform the game's nameplate anchors to.</summary>
-        private RectTransform nameplateAnchor;
-
-        /// <summary>Plant+text the nameplate is currently showing, to avoid restarting it.</summary>
-        private string nameplateShownFor;
 
         private void Update()
         {
@@ -189,13 +184,15 @@ namespace PlantPeek
 
             canvas.gameObject.SetActive(true);
 
-            if (UseGameNameplate)
+            if (GameNameplateBridge.Available)
             {
-                ShowGameNameplate(plant, body);
+                // The game nameplate draws itself; take our own fallback plate down while it does.
+                plateRect.gameObject.SetActive(false);
+                nameplate.Show(plant, body);
             }
             else
             {
-                HideGameNameplate();
+                nameplate.Hide();
                 plateRect.gameObject.SetActive(true);
                 text.text = body;
 
@@ -246,11 +243,7 @@ namespace PlantPeek
             }
 
             plateRect.position = screenPoint;
-
-            if (nameplateAnchor != null)
-            {
-                nameplateAnchor.position = screenPoint;
-            }
+            nameplate.Reposition(screenPoint);
         }
 
         private void ApplyStyle()
@@ -284,123 +277,12 @@ namespace PlantPeek
                 text.preferredHeight + 12f);
         }
 
-        private static bool UseGameNameplate =>
-            PlantPeekPlugin.UseGameNameplate.Value && UIScreen<NameplateScreen>.Instance != null;
-
-        /// <summary>
-        /// Show the panel in the game's own nameplate banner - the same one it uses for
-        /// character names.
-        ///
-        /// This is what Chest Labels ships, and the reason a self-drawn plate never quite
-        /// matched: font, colour, banner shape and reveal animation are all the game's, and
-        /// stay right even if a patch restyles them. NameplateScreen keys Show/Hide by target
-        /// RectTransform, so parking an invisible anchor at the plant's screen position is
-        /// enough and we can never disturb a nameplate the game is showing for something else.
-        ///
-        /// CustomNameplateData.Text goes straight to SetAndRenderText, so multi-line content
-        /// is fine.
-        /// </summary>
-        private void ShowGameNameplate(GrowableView plant, string body)
-        {
-            var screen = UIScreen<NameplateScreen>.Instance;
-            if (screen == null || nameplateAnchor == null)
-            {
-                return;
-            }
-
-            plateRect.gameObject.SetActive(false);
-
-            // Only call Show when the plant or its text actually changes; calling it every poll
-            // would restart the reveal animation twelve times a second.
-            var key = plant.GetInstanceID() + "" + body;
-            if (key == nameplateShownFor)
-            {
-                return;
-            }
-
-            nameplateShownFor = key;
-            screen.Show(nameplateAnchor, new CustomNameplateData(body));
-            ApplyNameplateTint(screen);
-        }
-
-        private static readonly System.Collections.Generic.Dictionary<Image, Color> tintedOriginals =
-            new System.Collections.Generic.Dictionary<Image, Color>();
-
-        /// <summary>
-        /// Recolour the game's bubble while it is showing our panel.
-        ///
-        /// NameplateScreen is shared - the game uses the same bubble for its own tooltips - so
-        /// the original colour of every image touched is cached and restored the moment the
-        /// panel goes away. Without that, the game's own nameplates inherit our tint.
-        /// </summary>
-        private static void ApplyNameplateTint(NameplateScreen screen)
-        {
-            var hex = PlantPeekPlugin.NameplateTint.Value;
-            if (string.IsNullOrWhiteSpace(hex) || !ColorUtility.TryParseHtmlString(hex, out var tint))
-            {
-                return;
-            }
-
-            foreach (var image in screen.GetComponentsInChildren<Image>(true))
-            {
-                if (image == null)
-                {
-                    continue;
-                }
-
-                if (!tintedOriginals.ContainsKey(image))
-                {
-                    tintedOriginals[image] = image.color;
-                }
-
-                // Preserve the bubble's own alpha so a fade-in still fades.
-                tint.a = image.color.a;
-                image.color = tint;
-            }
-        }
-
-        private static void RestoreNameplateTint()
-        {
-            if (tintedOriginals.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var pair in tintedOriginals)
-            {
-                if (pair.Key != null)
-                {
-                    pair.Key.color = pair.Value;
-                }
-            }
-
-            tintedOriginals.Clear();
-        }
-
-        private void HideGameNameplate()
-        {
-            if (nameplateShownFor == null)
-            {
-                RestoreNameplateTint();
-                return;
-            }
-
-            nameplateShownFor = null;
-            RestoreNameplateTint();
-
-            var screen = UIScreen<NameplateScreen>.Instance;
-            if (screen != null && nameplateAnchor != null)
-            {
-                screen.Hide(nameplateAnchor, true);
-            }
-        }
-
         /// <summary>
         /// Takes the panel down without forgetting what is hovered - see hoveredPlant.
         /// </summary>
         private void HidePanel()
         {
-            HideGameNameplate();
+            nameplate.Hide();
 
             if (canvas != null)
             {
@@ -465,13 +347,9 @@ namespace PlantPeek
             // own canvas has no neighbour to inherit from. See 10-visual-integration.md.
             GameFonts.Apply(text, preferOutline: true);
 
-            // The game's nameplate anchors to a RectTransform rather than a screen point, so
-            // this invisible one is parked at the plant's screen position each frame.
-            var anchorGo = new GameObject("NameplateAnchor");
-            anchorGo.transform.SetParent(canvasGo.transform, false);
-            nameplateAnchor = anchorGo.AddComponent<RectTransform>();
-            nameplateAnchor.sizeDelta = new Vector2(1f, 1f);
-            nameplateAnchor.pivot = new Vector2(0.5f, 0.5f);
+            // The game's nameplate anchors to a RectTransform rather than a screen point; the
+            // bridge parks an invisible one under this canvas, repositioned each frame.
+            nameplate.EnsureAnchor(canvasGo.transform);
 
             canvasGo.SetActive(false);
             PlantPeekPlugin.Log.LogInfo("Plant hover canvas created.");
