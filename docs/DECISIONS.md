@@ -4,6 +4,20 @@ Design decisions worth not re-litigating. Newest first. Seeded from the README, 
 history, and the 2026-08-22 structural review; rationale is the authors' where recorded, inferred where
 noted.
 
+## 2026-08-22 — Decompose the `PlantHover` God-file (P1 pass) + fix the growth-path bug
+**What:** Extracted `PlantTargeting` (camera + plant resolution) and `GameNameplateBridge` (game-nameplate
+anchor, Show/Hide keying, tint cache) out of `PlantHover` (now **358 lines**, from 795). Fixed a real bug:
+`StageGraph` and `Requirements` had diverged on what counts as a growth path, letting a chop path outrank
+the real one — unified via a shared `GrowthPaths.IsGrowthTransition`.
+**Why:** `PlantHover` was a God-MonoBehaviour; these are cohesive, independently-testable seams. The
+growth-path split was a latent correctness bug, not just tidiness.
+**Rejected:** the `TryPeek<T>` persistence helper (P1-e) — its shared base type doesn't resolve cleanly,
+so forcing it would be over-abstraction; the fallback-plate UI split (`PlantHoverPanel`, P2-f) — left for
+later since `Reposition` straddles plate + nameplate anchor. **Deferred as a product call:** scoping the
+global `NameplateGuard` finalizer (P1-c) changes whether PlantPeek shields other mods' nameplates.
+**Caveat:** the targeting/nameplate extractions and the growth-path fix are compile-verified but not yet
+validated in-game.
+
 ## 2026-08-22 — Extract `PanelText` from the `PlantHover` God-file
 **What:** Moved all text formatting (`Format*`, the met/unmet colour palette, `Tick`/`Cross`/`Separate`)
 out of `PlantHover.cs` (795→595 lines) into a new `PanelText.cs`.

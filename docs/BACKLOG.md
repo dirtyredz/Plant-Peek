@@ -8,33 +8,36 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
 - _(none open)_
 
 ## P1 — structural debt worth scheduling
-- [ ] **P1-a — Extract `GameNameplateBridge` from `PlantHover`.** Move `ShowGameNameplate`,
-  `HideGameNameplate`, `ApplyNameplateTint`, `RestoreNameplateTint`, `UseGameNameplate`,
-  `tintedOriginals`, `nameplateAnchor`/`nameplateShownFor` + the anchor block in `EnsureUi`. Give it a
-  small surface (`Show/Hide/Reposition`). Moderate: shared static tint state, Unity object ownership,
-  nameplate animation. Verify in-game.
-- [ ] **P1-b — Extract `PlantTargeting` from `PlantHover`.** Camera resolution + plant raycast/target
-  (`ResolveCamera`, `ResolvePlant`, `FindPlantUnderMouse`, `ShouldStandDown`, cache + log-once flags,
-  `RaycastDistance`). Mostly code motion; low runtime risk. Pairs with a later `PlantHoverPanel` for the
-  fallback plate (`EnsureUi`/`ApplyStyle`/`FitPlateToText`/`Reposition`) — defer that until after, since
-  `Reposition` straddles plate + nameplate anchor.
-- [ ] **P1-c — Scope the `NameplateGuard` finalizer to our own call.** It currently suppresses
-  TypeLoad/TypeInit/MissingMember exceptions for *every* `NameplateScreen.Show`, regardless of caller
-  (Codex rated P0). Register our anchor and suppress only when the patched call's `RectTransform` is
-  ours — or drop the global patch and try/catch around our own `screen.Show`. **Needs in-game validation
-  with and without an incompatible tooltip mod.**
-- [ ] **P1-d — Centralize growth-path classification.** `StageGraph.IsGrowth` (excludes
-  `DamageTakenRequirement`) and `Requirements.Read`'s `advances` check (any non-self target) disagree, so
-  a damage/replacement path can be scored over the real growth path → empty/wrong "waiting on". Extract a
-  shared `IsGrowthTransition(GrowPath, GrowStage)` used by both. **Behaviourally risky — validate against
-  real crops in-game** (trees, spreading/regrowing crops). Leave the all-paths loops in Diagnostics and
-  `ReadChoppedPercent` alone (different purpose).
-- [ ] **P1-e — `TryPeek<T>` persistence helper in `GrowthReader`.** Replace the two
-  `GamePersistence…CurrentRoom…TryGetByGuid` peeks (chopped %, harvest status), each guarded only by a
-  prose "never FindOrCreate" comment, with one named helper that encodes the save-safety invariant.
-  Confirm the two lists share a common generic base first.
+- [x] **P1-a — Extract `GameNameplateBridge` from `PlantHover`.** ✅ Done 2026-08-22 — anchor object,
+  Show/Hide reveal-keying, and shared-bubble tint cache/restore now live in `GameNameplateBridge`;
+  `PlantHover` delegates. Compile-verified. **Still needs in-game validation** (nameplate show/hide,
+  reveal animation, tint restore can't be confirmed by a compile).
+- [x] **P1-b — Extract `PlantTargeting` from `PlantHover`.** ✅ Done 2026-08-22 — camera resolution +
+  plant raycast/interaction-target selection moved out; `PlantHover` keeps the stand-down gate and
+  no-camera warning. Behaviour-preserving, compile-verified.
+- [ ] **P1-c — Scope or drop the `NameplateGuard` finalizer. ⏳ NEEDS A PRODUCT DECISION.** It currently
+  suppresses TypeLoad/TypeInit/MissingMember exceptions for *every* `NameplateScreen.Show`, regardless of
+  caller (Codex rated P0). Now that `GameNameplateBridge` owns our `Show` call, the clean fix is to
+  try/catch there and drop the global patch — but that changes behaviour: today PlantPeek incidentally
+  shields the *game's own* nameplates (and other mods') from a broken tooltip-mod postfix; scoping it
+  makes PlantPeek fix only its own panel. Decide: **be a global good-citizen (keep the patch)** vs **fix
+  only our own (scope it)**. Either way **validate in-game with and without an incompatible tooltip mod.**
+- [x] **P1-d — Centralize growth-path classification.** ✅ Done 2026-08-22 — extracted
+  `GrowthPaths.IsGrowthTransition`, now used by both `StageGraph` and `Requirements`, fixing the bug
+  where a chop path could outrank the real growth path (blank/wrong "waiting on"). **Still needs in-game
+  validation** against trees / spreading / regrowing crops.
+- [~] **P1-e — `TryPeek<T>` persistence helper. Abandoned (investigated).** The shared
+  `GuidPersistenceList<T>` base does not resolve without deeper assembly spelunking than the payoff
+  justifies; forcing a helper of unknown signature would be over-abstraction. The two `TryGetByGuid`
+  peeks stay as-is, each with its "never FindOrCreate" comment (also captured in GOTCHAS). Revisit only
+  if the base type is confirmed cheaply.
 
 ## P2 — nice-to-have
+- [ ] **P2-f — Extract `PlantHoverPanel` (the fallback plate) from `PlantHover`.** The last sub-seam:
+  `EnsureUi` (canvas/plate/text build), `ApplyStyle`, `FitPlateToText`, and the plate half of
+  `Reposition`. Deferred behind P1-a because `Reposition` drives both the plate and the (now bridge-owned)
+  nameplate anchor — decide who owns positioning. `PlantHover` is 358 lines now, so this is polish, not
+  urgent.
 - [ ] **P2-a — Stop the model leaking presentation/diagnostics config.** `GrowthReader.ResolveName` reads
   `UseProduceName` and `WarnOnce` reads `VerboseLogging`. Store both `PlantedItemName` + `ProduceName` on
   `PlantInfo` and let `PanelText` choose; move `WarnOnce`/`CountWaterables`/`WarnedCrops` into
