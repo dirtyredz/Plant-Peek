@@ -22,17 +22,38 @@ namespace PlantPeek
     /// </summary>
     internal static class StageGraph
     {
-        internal static void Measure(List<GrowStage> stages, GrowStage current, GrowthReader.PlantInfo info)
+        /// <summary>
+        /// Where a plant sits in its growth. Returned by <see cref="Measure"/> rather than
+        /// written into <see cref="GrowthReader.PlantInfo"/>, so a graph utility does not
+        /// depend on one consumer's aggregate. A default value (all zero/false) is the
+        /// "nothing to say" answer for a missing or empty stage container.
+        /// </summary>
+        internal readonly struct StageMeasurement
+        {
+            /// <summary>1-based, or 0 when the current stage guid isn't in the growth graph.</summary>
+            internal readonly int StageNumber;
+            internal readonly int StageCount;
+            internal readonly bool IsFullyGrown;
+
+            internal StageMeasurement(int stageNumber, int stageCount, bool isFullyGrown)
+            {
+                StageNumber = stageNumber;
+                StageCount = stageCount;
+                IsFullyGrown = isFullyGrown;
+            }
+        }
+
+        internal static StageMeasurement Measure(List<GrowStage> stages, GrowStage current)
         {
             if (stages == null || stages.Count == 0)
             {
-                return;
+                return default;
             }
 
             var first = stages[0];
             if (first == null)
             {
-                return;
+                return default;
             }
 
             var depths = new Dictionary<GrowStage, int> { { first, 0 } };
@@ -63,16 +84,19 @@ namespace PlantPeek
                 }
             }
 
-            info.StageCount = depths.Count;
+            var stageCount = depths.Count;
 
+            var stageNumber = 0;
             if (current != null && depths.TryGetValue(current, out var depth))
             {
-                info.StageNumber = depth + 1;
+                stageNumber = depth + 1;
             }
 
             // Fully grown means nothing further to grow *into* - not "no paths at all", which
             // was never true of a tree that can still be felled.
-            info.IsFullyGrown = current != null && !HasGrowthPath(current) && info.StageCount > 1;
+            var isFullyGrown = current != null && !HasGrowthPath(current) && stageCount > 1;
+
+            return new StageMeasurement(stageNumber, stageCount, isFullyGrown);
         }
 
         internal static bool HasGrowthPath(GrowStage stage)

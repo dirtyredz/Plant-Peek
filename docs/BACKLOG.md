@@ -41,9 +41,10 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   `UseProduceName` and `WarnOnce` reads `VerboseLogging`. Store both `PlantedItemName` + `ProduceName` on
   `PlantInfo` and let `PanelText` choose; move `WarnOnce`/`CountWaterables`/`WarnedCrops` into
   `Diagnostics`.
-- [ ] **P2-b — `StageGraph.Measure` should return a `StageMeasurement`** (StageNumber/StageCount/
-  IsFullyGrown) instead of mutating `GrowthReader.PlantInfo` — removes a wrong-direction dependency of a
-  graph utility on one consumer's aggregate. Consider promoting `PlantInfo` to its own file.
+- [x] **P2-b — `StageGraph.Measure` returns a `StageMeasurement`.** ✅ Done 2026-08-22 — `Measure` now
+  returns a `StageMeasurement` (StageNumber/StageCount/IsFullyGrown) and `GrowthReader.Read` copies it
+  onto `PlantInfo`, removing the wrong-direction dependency of the graph utility on one consumer's
+  aggregate. Compile-verified. (Promoting `PlantInfo` to its own file left for the P2-a pass.)
 - [ ] **P2-c — Latent sub-file seams in `GrowthReader`** (471 lines, cohesive today): a `GrowthTiming`
   (`EstimateDaysLeft` + `ReadStageCosts`, already a 2nd caller in `Diagnostics`) and a `WaterState`
   facet. Do only if the file grows past ~600 lines.

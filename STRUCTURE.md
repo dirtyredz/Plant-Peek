@@ -45,7 +45,7 @@ Hotkey ── movement-safe key checks
 | [src/PanelText.cs](src/PanelText.cs) (218) | Pure formatting: `PlantInfo` + `DetailLevel` → TMP string; owns the met/unmet colour palette | `PanelText.Format` | GrowthReader.PlantInfo, Requirements.State, GamePalette, config | change wording, colours, glyphs, detail layout |
 | [src/GrowthReader.cs](src/GrowthReader.cs) (471) | Read-only model: `GrowableView` → `PlantInfo` (name, stage, harvest, water, chopped %, day estimate). No writes, no side-effecting game calls | `GrowthReader.Read`, `PlantInfo`, `ReadStageCosts` | StageGraph, Requirements, GrowthPaths, game persistence | add a readable fact about a plant |
 | [src/Requirements.cs](src/Requirements.cs) (265) | Stage exit conditions → readable met/unmet/unknown lines, behind a **side-effect allowlist**; picks the best grow path | `Requirements.Read`, `State`, `Entry` | GrowthPaths, game requirement types | support a new requirement type (add to allowlist only after reading its check) |
-| [src/StageGraph.cs](src/StageGraph.cs) (92) | BFS over grow paths (growth only) → stage number, count, fully-grown | `StageGraph.Measure`, `HasGrowthPath` | GrowthPaths, game GrowStage/GrowPath | change how stage position is computed |
+| [src/StageGraph.cs](src/StageGraph.cs) (115) | BFS over grow paths (growth only) → `StageMeasurement` (stage number, count, fully-grown), returned not mutated | `StageGraph.Measure`, `StageMeasurement`, `HasGrowthPath` | GrowthPaths, game GrowStage/GrowPath | change how stage position is computed |
 | [src/GrowthPaths.cs](src/GrowthPaths.cs) (35) | Single definition of "is this grow path the plant *growing*?" (excludes chop/damage paths) | `GrowthPaths.IsGrowthTransition` | game GrowPath/GrowStage | shared by StageGraph + Requirements so they can't diverge |
 | [src/InteractionTarget.cs](src/InteractionTarget.cs) (91) | Reads the game's own cursor-interaction target via reflection | `InteractionTarget.FindPlant` | HarmonyX AccessTools, game UI | game renames the private field |
 | [src/Hotkey.cs](src/Hotkey.cs) (58) | Key checks that survive a held movement key (not `KeyboardShortcut.IsPressed`) | `Hotkey.IsHeld`, `WasPressed` | BepInEx, UnityEngine.Input | change hold/toggle semantics |
@@ -102,8 +102,9 @@ classifier. Remaining items tracked in [docs/BACKLOG.md](docs/BACKLOG.md):
   "never FindOrCreate" peeks was attempted; the shared `GuidPersistenceList<T>` base does not resolve
   without deeper assembly work, so per "verify before extracting" the two call sites stay as documented
   direct peeks. Left as a low note in BACKLOG.
-- **P2 — remaining (unchanged):** fallback-plate UI (`PlantHoverPanel`) is `PlantHover`'s last sub-seam;
-  model leaks presentation/diagnostics config; `StageGraph.Measure` mutates `PlantInfo`; latent
-  `GrowthTiming`/`WaterState` splits; addon/stage resolution duplicated with `Diagnostics`. `BACKLOG` P2.
+- **P2 — remaining:** fallback-plate UI (`PlantHoverPanel`) is `PlantHover`'s last sub-seam;
+  model leaks presentation/diagnostics config; latent `GrowthTiming`/`WaterState` splits; addon/stage
+  resolution duplicated with `Diagnostics`. `BACKLOG` P2. **Fixed 2026-08-22:** `StageGraph.Measure`
+  now returns a `StageMeasurement` instead of mutating `PlantInfo` (P2-b).
 
 _Living doc — refresh with /project-docs when it drifts._

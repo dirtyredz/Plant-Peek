@@ -79,7 +79,10 @@ namespace PlantPeek
                 Name = ResolveName(itemAsset, addon),
             };
 
-            StageGraph.Measure(stages, currentStage, info);
+            var measurement = StageGraph.Measure(stages, currentStage);
+            info.StageNumber = measurement.StageNumber;
+            info.StageCount = measurement.StageCount;
+            info.IsFullyGrown = measurement.IsFullyGrown;
 
             // Time.TotalDay is the same clock DayPlanted and DayGrowStageChanged are recorded
             // against - see WaterGrowStageRequirement, which compares them directly.
@@ -96,7 +99,7 @@ namespace PlantPeek
             var tree = view.GetComponentInChildren<ITreeGridComponent>();
             info.IsStump = tree != null && tree.IsStump;
 
-            // IsFullyGrown is set by StageGraph.Measure above; a stump is never "fully grown".
+            // IsFullyGrown came from the stage measurement above; a stump is never "fully grown".
             if (info.IsStump)
             {
                 info.IsFullyGrown = false;
