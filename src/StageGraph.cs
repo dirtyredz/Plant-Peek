@@ -45,7 +45,7 @@ namespace PlantPeek
 
                 foreach (var path in stage.GrowPaths)
                 {
-                    if (!IsGrowth(path, stage))
+                    if (!GrowthPaths.IsGrowthTransition(path, stage))
                     {
                         continue;
                     }
@@ -79,28 +79,13 @@ namespace PlantPeek
         {
             foreach (var path in stage.GrowPaths)
             {
-                if (IsGrowth(path, stage))
+                if (GrowthPaths.IsGrowthTransition(path, stage))
                 {
                     return true;
                 }
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Whether a path is the plant growing, as opposed to being destroyed or spreading in
-        /// place. A path gated on damage is the player chopping it down - the stage it leads to
-        /// is a stump, not a further stage of the plant.
-        /// </summary>
-        private static bool IsGrowth(GrowPath path, GrowStage from)
-        {
-            if (path == null || path.TargetGrowStage == null || path.TargetGrowStage == from)
-            {
-                return false;
-            }
-
-            return path.GetComponent<DamageTakenRequirement>() == null;
         }
     }
 }

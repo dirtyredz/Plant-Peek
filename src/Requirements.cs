@@ -88,7 +88,12 @@ namespace PlantPeek
                 // same stage. A path that leads somewhere new is the one the player means by
                 // "what is it waiting for"; ranking those first stops a spread path's blocked
                 // footprint being reported as the reason a healthy plant is not growing.
-                var advances = path.TargetGrowStage != null && path.TargetGrowStage != stage;
+                //
+                // Uses the shared GrowthPaths classifier rather than a local "non-self target"
+                // test: ReadPath strips the DamageTakenRequirement off a chop path below, so a
+                // local test would score that path as a zero-outstanding advance and prefer it
+                // over the real growth path. GrowthPaths excludes chop paths, matching StageGraph.
+                var advances = GrowthPaths.IsGrowthTransition(path, stage);
 
                 var entries = ReadPath(path, gridPersistence, growablePersistence, addon);
 
