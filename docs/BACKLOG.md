@@ -10,8 +10,8 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
 ## P1 — structural debt worth scheduling
 - [x] **P1-a — Extract `GameNameplateBridge` from `PlantHover`.** ✅ Done 2026-08-22 — anchor object,
   Show/Hide reveal-keying, and shared-bubble tint cache/restore now live in `GameNameplateBridge`;
-  `PlantHover` delegates. Compile-verified. **Still needs in-game validation** (nameplate show/hide,
-  reveal animation, tint restore can't be confirmed by a compile).
+  `PlantHover` delegates. Compile-verified, and **validated in-game 2026-08-22** (nameplate show/hide,
+  reveal animation, and tint restore all correct).
 - [x] **P1-b — Extract `PlantTargeting` from `PlantHover`.** ✅ Done 2026-08-22 — camera resolution +
   plant raycast/interaction-target selection moved out; `PlantHover` keeps the stand-down gate and
   no-camera warning. Behaviour-preserving, compile-verified.
@@ -23,8 +23,8 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   global suppression is ever seen to mask a real failure.
 - [x] **P1-d — Centralize growth-path classification.** ✅ Done 2026-08-22 — extracted
   `GrowthPaths.IsGrowthTransition`, now used by both `StageGraph` and `Requirements`, fixing the bug
-  where a chop path could outrank the real growth path (blank/wrong "waiting on"). **Still needs in-game
-  validation** against trees / spreading / regrowing crops.
+  where a chop path could outrank the real growth path (blank/wrong "waiting on"). **Validated in-game
+  2026-08-22** against trees / spreading / regrowing crops.
 - [~] **P1-e — `TryPeek<T>` persistence helper. Abandoned (investigated).** The shared
   `GuidPersistenceList<T>` base does not resolve without deeper assembly spelunking than the payoff
   justifies; forcing a helper of unknown signature would be over-abstraction. The two `TryGetByGuid`
@@ -39,7 +39,8 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   the point to its own object — so `PlantHover.Reposition` calls `panel.PositionAt` and
   `nameplate.Reposition`. The nameplate anchor still parents under the panel's canvas (its coordinate
   host), wired by the orchestrator so `PlantHoverPanel` stays unaware of the nameplate. `PlantHover`
-  795 → 261 lines. Compile-verified.
+  795 → 261 lines. Compile-verified, and **validated in-game 2026-08-22** (fallback plate builds,
+  styles, and tracks the plant with `UseGameNameplate = false`).
 - [x] **P2-a — Stop the model leaking presentation/diagnostics config.** ✅ Done 2026-08-22 — `PlantInfo`
   now carries both `PlantedItemName` + `ProduceName` and `PanelText.ResolveName` makes the `UseProduceName`
   choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `WaterDiagnostics.WarnMissingWaterOnce`
