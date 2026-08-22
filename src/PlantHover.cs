@@ -15,9 +15,10 @@ namespace PlantPeek
     /// </summary>
     internal sealed class PlantHover : MonoBehaviour
     {
-        private const float RaycastDistance = 200f;
         private const float PollInterval = 0.08f;
         private const float OutlineWidth = 0.3f;
+
+        private readonly PlantTargeting targeting = new PlantTargeting();
 
         private Canvas canvas;
         private RectTransform plateRect;
@@ -36,8 +37,6 @@ namespace PlantPeek
         private GrowableView hoveredPlant;
 
         private bool warnedNoCamera;
-        private Camera cachedCamera;
-        private bool loggedFirstHit;
 
         /// <summary>The plant most recently clicked, for ExpandMode.Click.</summary>
         private GrowableView clickedPlant;
@@ -46,7 +45,6 @@ namespace PlantPeek
         private bool toggledOpen;
 
         private bool loggedExpanded;
-        private bool loggedInteractionSource;
 
         /// <summary>Invisible RectTransform the game's nameplate anchors to.</summary>
         private RectTransform nameplateAnchor;
@@ -137,7 +135,7 @@ namespace PlantPeek
                 return;
             }
 
-            var camera = ResolveCamera();
+            var camera = targeting.ResolveCamera();
             if (camera == null)
             {
                 if (!warnedNoCamera)
@@ -151,7 +149,7 @@ namespace PlantPeek
                 return;
             }
 
-            var plant = ResolvePlant(camera);
+            var plant = targeting.ResolvePlant(camera);
             hoveredPlant = plant;
 
             if (plant == null)
@@ -224,118 +222,6 @@ namespace PlantPeek
             return cursorScreen == null || !cursorScreen.IsShowing;
         }
 
-        /// <summary>
-        /// Camera.main is null in this game - the gameplay camera is not tagged "MainCamera",
-        /// which is normal for a Cinemachine setup. Fall back to the highest-depth active
-        /// camera that renders to the screen.
-        /// </summary>
-        private Camera ResolveCamera()
-        {
-            if (cachedCamera != null && cachedCamera.isActiveAndEnabled)
-            {
-                return cachedCamera;
-            }
-
-            var main = Camera.main;
-            if (main != null)
-            {
-                cachedCamera = main;
-                return cachedCamera;
-            }
-
-            Camera best = null;
-            foreach (var candidate in Camera.allCameras)
-            {
-                if (candidate == null || !candidate.isActiveAndEnabled || candidate.targetTexture != null)
-                {
-                    continue;
-                }
-
-                if (best == null || candidate.depth > best.depth)
-                {
-                    best = candidate;
-                }
-            }
-
-            if (best != null && cachedCamera == null)
-            {
-                PlantPeekPlugin.Log.LogInfo($"Plant hover using camera '{best.name}'.");
-            }
-
-            cachedCamera = best;
-            return cachedCamera;
-        }
-
-        /// <summary>
-        /// Which plant the panel is about.
-        ///
-        /// The game's own interaction target is preferred: it puts the panel on exactly the
-        /// plant the interaction arrow is on, with no boundary mismatch between the mod's
-        /// reach and the game's. But a growing crop often has no interaction available - and
-        /// describing that plant is the whole point - so a miss falls through to the raycast
-        /// rather than showing nothing.
-        /// </summary>
-        private GrowableView ResolvePlant(Camera camera)
-        {
-            if (PlantPeekPlugin.PreferInteractionTarget.Value)
-            {
-                var target = InteractionTarget.FindPlant();
-                if (target != null)
-                {
-                    if (PlantPeekPlugin.VerboseLogging.Value && !loggedInteractionSource)
-                    {
-                        loggedInteractionSource = true;
-                        PlantPeekPlugin.Log.LogInfo(
-                            "Using the game's interaction target to pick the hovered plant.");
-                    }
-
-                    return target;
-                }
-            }
-
-            return FindPlantUnderMouse(camera);
-        }
-
-        /// <summary>
-        /// Interaction colliders are frequently triggers, which a plain raycast skips - hence
-        /// QueryTriggerInteraction.Collide and RaycastAll rather than the first hit only.
-        /// </summary>
-        private GrowableView FindPlantUnderMouse(Camera camera)
-        {
-            // Fully qualified: an `Input` type in one of the game's own namespaces would
-            // otherwise shadow UnityEngine's.
-            var ray = camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
-            var hits = Physics.RaycastAll(ray, RaycastDistance, ~0, QueryTriggerInteraction.Collide);
-
-            GrowableView best = null;
-            var bestDistance = float.MaxValue;
-
-            foreach (var hit in hits)
-            {
-                var plant = hit.collider.GetComponentInParent<GrowableView>();
-                if (plant != null && hit.distance < bestDistance)
-                {
-                    best = plant;
-                    bestDistance = hit.distance;
-                }
-            }
-
-            if (!loggedFirstHit && hits.Length > 0 && PlantPeekPlugin.VerboseLogging.Value)
-            {
-                loggedFirstHit = true;
-                PlantPeekPlugin.Log.LogInfo(
-                    $"Hover raycast working: {hits.Length} collider(s) under cursor, " +
-                    $"first = '{hits[0].collider.name}', plant found = {best != null}");
-            }
-
-            if (best != null && PlantPeekPlugin.VerboseLogging.Value)
-            {
-                Diagnostics.LogPlantOnce(best);
-            }
-
-            return best;
-        }
-
         private void Reposition()
         {
             if (canvas == null || hoveredPlant == null || !canvas.gameObject.activeSelf)
@@ -343,7 +229,7 @@ namespace PlantPeek
                 return;
             }
 
-            var camera = ResolveCamera();
+            var camera = targeting.ResolveCamera();
             if (camera == null)
             {
                 return;
