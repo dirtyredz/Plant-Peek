@@ -123,7 +123,7 @@ Plant-Peek/
     │   ├── PlantHoverPanel.cs     the mod's own fallback plate (canvas, style, fit, position)
     │   ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
     │   └── PanelSprite.cs         copied verbatim from ChestLabels — fix bugs in both
-    └── core/                  needs neither a game type nor a canvas
+    └── core/                  no canvas; game types only in the two diagnostics helpers
         ├── Hotkey.cs              key checks that survive a held movement key
         ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
         └── WaterDiagnostics.cs    once-per-crop "why no watered line" warning, behind VerboseLogging

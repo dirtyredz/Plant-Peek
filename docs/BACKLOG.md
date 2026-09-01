@@ -74,3 +74,20 @@ P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
   re-check if colours look off.
 
 _Living doc — refresh with /project-docs when it drifts._
+
+## Placement follow-ups (from the 2026-09-01 structure review)
+
+Raised by the review of the `src/` regrouping. Placement and accuracy items, not defects.
+
+- **P2 — `game/` is carrying two concerns (10 of 18 files).** It holds both the growth *model*
+  (`GrowthReader`, `StageGraph`, `Requirements`, `GrowthPaths` — pure interpretation of the game's
+  grow-graph) and the live interop bridges (`PlantTargeting`, `InteractionTarget`,
+  `GameNameplateBridge`, `NameplateGuard`, `GameFonts`, `GamePalette`). They have different churn
+  histories and different seams. Consider `game/growth/` as a sub-seam, or promoting the growth model
+  to its own top-level component — it is arguably the mod's real domain. Two more interop files tip
+  `game/` over the 12-file flat-bucket cap.
+- **P2 — tighten the three `PlantInfo` seam leaks.** `ui/PlantHover.cs` holds a raw `GrowableView`
+  and reads `.transform.position` (could move into `PlantTargeting`); `core/Diagnostics.cs` and
+  `core/WaterDiagnostics.cs` both take a `GrowableView`. STRUCTURE.md and README now describe these
+  as exceptions rather than claiming they do not exist; fixing them would let the stronger claim
+  return.

@@ -50,7 +50,8 @@ PlantPeek/
     │   ├── PlantHoverPanel.cs     # the mod's own fallback plate (canvas/style/fit/position)
     │   ├── PanelText.cs           # PlantInfo + DetailLevel → TMP-markup string
     │   └── PanelSprite.cs         # generated 9-slice plate sprite
-    └── core/                # the mod's own logic — needs neither a game type nor a canvas
+    └── core/                # the mod's own logic — no canvas, and no game type except the
+                             #   two diagnostics helpers, which take a GrowableView (see below)
         ├── Hotkey.cs              # movement-safe key checks (hold/press)
         ├── Diagnostics.cs         # VerboseLogging-gated per-crop growth dump
         └── WaterDiagnostics.cs    # VerboseLogging-gated "why no watered line" warning
@@ -65,9 +66,15 @@ PlantPeek/
 - `pack.ps1` — packaging script; workspace convention puts it at the mod root beside the docs
 - `scripts/` — repo tooling: the git-hook installer and the pre-commit formatter
 
-The seam between `game/` and the rest is the `PlantInfo` DTO: everything that touches a raw game
-growth type (`GrowableView`, `GrowStage`, `GrowPath`, the requirement components) sits in `game/`;
-everything downstream consumes `PlantInfo` and never sees a game type. `GameFonts`/`GamePalette` are
+The seam between `game/` and the rest is the `PlantInfo` DTO: the growth *model* — everything that
+interprets a raw `GrowStage`/`GrowPath`/requirement component — sits in `game/`, and the panel
+renderers (`PanelText`, `PlantHoverPanel`) consume only `PlantInfo`.
+
+**Two documented exceptions, so the seam is not oversold.** `ui/PlantHover.cs` is the orchestrator
+and holds the raw `GrowableView` handle it polls with, passing it into `GrowthReader`; and
+`core/Diagnostics.cs` / `core/WaterDiagnostics.cs` both take a `GrowableView` and read game types
+directly. So the rule is "renderers never see a game type", not "nothing outside `game/` does".
+Tightening those three is [BACKLOG.md](docs/BACKLOG.md) work, not a claim to make here. `GameFonts`/`GamePalette` are
 game reads (font assets, sampled UI colours) and so live in `game/`, while `PanelSprite` is generated
 art and lives in `ui/` — matching ChestLabels, from which all three are vendored verbatim. Config
 binding stays in `Plugin.cs` rather than `core/`: BepInEx `ConfigEntry` binding is part of the plugin
