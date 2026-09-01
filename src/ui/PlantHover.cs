@@ -9,7 +9,7 @@ namespace PlantPeek
     ///
     /// Structure and every gotcha handled here were established by Chest Labels' HoverLabel:
     /// the game has no hover system to hook, Camera.main is null, and world UI has to be gated
-    /// on PlayerCursorInteractionScreen. See mods/ChestLabels/src/ChestLabels/HoverLabel.cs.
+    /// on PlayerCursorInteractionScreen. See mods/ChestLabels/src/ui/HoverLabel.cs.
     ///
     /// Orchestration only: it polls, decides when to show and at what detail, projects the
     /// plant's world point to the screen, and hands the result to the two drawers - the mod's

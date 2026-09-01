@@ -4,6 +4,24 @@ Design decisions worth not re-litigating. Newest first. Seeded from the README, 
 history, and the 2026-08-22 structural review; rationale is the authors' where recorded, inferred where
 noted.
 
+## 2026-09-01 — Fold `src/` into `game/` / `ui/` / `core/`, with `Plugin.cs` at the root
+**What:** The 18 plugin `.cs` moved out of a flat `src/` into three responsibility folders — `src/game/`
+(live-game reads, bridges and the one Harmony patch), `src/ui/` (panels, copy, generated art) and
+`src/core/` (hotkeys + diagnostics) — leaving only `Plugin.cs` beside the `.csproj`. The taxonomy is the
+same one every Moonlight Peaks mod uses (ChestLabels, ModNook), and `STRUCTURE.md`'s `## Layout` section
+now declares it as an enforced contract the placement hook parses.
+**Why:** a flat 18-file `src/` says nothing about which files may touch the game and which may not — the
+read-only-toward-the-save invariant is the mod's central rule and had no structural expression. The
+`PlantInfo` DTO is the seam: raw game types (`GrowableView`, `GrowStage`, `GrowPath`, requirement
+components) stay behind `game/`; everything downstream consumes `PlantInfo`. Free to do: the project is
+SDK-style so `**/*.cs` globs recursively (no csproj edit), and C# does not tie namespaces to folders, so
+the single flat `PlantPeek` namespace and every `using` were untouched. Build was identical before and
+after (0 errors, 2 benign `MSB3277` warnings).
+**Rejected:** staying flat (this supersedes the "no `src/PlantPeek/` subdir" decision below only as to
+flatness — the *nesting-by-project-name* level is still rejected, and there is still no `src/PlantPeek/`);
+a fourth folder for the growth model (`GrowthReader`/`StageGraph`/`Requirements`/`GrowthPaths` all speak
+raw game types, so they are `game/`, not a separate domain layer).
+
 ## 2026-08-22 — Keep `NameplateGuard` a global finalizer (don't scope it)
 **What:** `NameplateGuard` stays a global Harmony finalizer on `NameplateScreen.Show`, suppressing
 stale-reference exceptions (TypeLoad/TypeInit/MissingMember) for *all* callers, not just Plant Peek's.
@@ -74,10 +92,11 @@ false while any other key is held — so the binding never fired while the playe
 **Rejected:** the built-in check.
 
 ## ~2026-08 — No `src/PlantPeek/` subdirectory; version single-sourced from csproj
-**What:** Plugin `.cs` sit flat in `src/`; `[BepInPlugin]` version comes from `ModBuildInfo.Version`
+**What:** No project-name nesting level under `src/`; `[BepInPlugin]` version comes from `ModBuildInfo.Version`
 generated from the csproj `<Version>`. **Why:** one project, so the extra level said nothing; a
-hardcoded version string drifts. **Rejected:** ChestLabels-style subdir (it has two projects); a
-hardcoded `PluginVersion`.
+hardcoded version string drifts. Sources were additionally flat *within* `src/` until 2026-09-01, when
+they were foldered by responsibility (see above); the `src/PlantPeek/` level itself stays rejected.
+**Rejected:** a ChestLabels-style project-name subdir (it has two projects); a hardcoded `PluginVersion`.
 
 ## ~2026-08 — Removed the bottom-of-screen "Hold LeftAlt" hint
 **What:** A built, working interaction-prompt hint was removed. **Why:** the game raises a prompt per

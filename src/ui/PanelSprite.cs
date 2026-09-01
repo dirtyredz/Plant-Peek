@@ -1,4 +1,4 @@
-// Copied verbatim from mods/ChestLabels/src/ChestLabels/PanelSprite.cs, namespace aside.
+// Copied verbatim from mods/ChestLabels/src/ui/PanelSprite.cs, namespace aside.
 // Shared look-and-feel: see 10-visual-integration.md. Fix bugs in both copies.
 using UnityEngine;
 

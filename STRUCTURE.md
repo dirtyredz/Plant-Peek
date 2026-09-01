@@ -13,9 +13,67 @@ toward the save — see [docs/GOTCHAS.md](docs/GOTCHAS.md). One `MonoBehaviour` 
 ~12 Hz, reads plant state through a read-only model (`GrowthReader`), and draws the game's own
 nameplate banner.
 
-Plugin `.cs` sit **flat in `src/`** (no `src/PlantPeek/` subdir — intentional; single project). Version
-is single-sourced from `src/PlantPeek.csproj` `<Version>` via `GenerateModBuildInfo` in the
-workspace-synced `Directory.Build.props`.
+Sources sit under `src/` in three responsibility folders — `game/`, `ui/`, `core/` — with `Plugin.cs`
+alone at the `src/` root beside the `.csproj` (see [Layout](#layout)). There is no `src/PlantPeek/`
+subdir: one project, one namespace (`PlantPeek`), flat across every folder — C# does not tie
+namespaces to directories, so moving a file is never a `using` change. Version is single-sourced from
+`src/PlantPeek.csproj` `<Version>` via `GenerateModBuildInfo` in the workspace-synced
+`Directory.Build.props`.
+
+## Layout
+
+```
+PlantPeek/
+├── pack.ps1                 # packaging script — workspace convention: lives at the mod root
+├── STRUCTURE.md, CLAUDE.md, README.md, CHANGELOG.md, NEXUS.md, RELEASING.md, TESTING.md
+├── Directory.Build.props    # workspace-synced canonical — do not hand-edit here
+├── docs/                    # the living-doc set (ARCHITECTURE, DECISIONS, FEATURES, ...)
+├── research/                # decompile notes on the game's growth system
+├── scripts/                 # repo tooling — git hook installer + pre-commit formatter
+├── screenshots/             # Nexus page art
+└── src/
+    ├── PlantPeek.csproj
+    ├── Plugin.cs            # BepInEx entry point — must sit beside the .csproj, not in a folder
+    ├── game/                # interop with the live game: read it, patch it, never write the save
+    │   ├── GrowthReader.cs        # GrowableView → PlantInfo (the read-only model boundary)
+    │   ├── StageGraph.cs          # BFS over the game's GrowStage/GrowPath graph
+    │   ├── Requirements.cs        # game requirement types → lines, behind a side-effect allowlist
+    │   ├── GrowthPaths.cs         # shared "is this GrowPath growth?" classifier
+    │   ├── PlantTargeting.cs      # resolves the game camera + the plant under the cursor
+    │   ├── InteractionTarget.cs   # reads the game's live cursor-interaction target
+    │   ├── GameNameplateBridge.cs # renders through the game's own NameplateScreen
+    │   ├── NameplateGuard.cs      # Harmony finalizer guarding NameplateScreen.Show
+    │   ├── GameFonts.cs           # locates the game's Gelica font + outline material
+    │   └── GamePalette.cs         # the game's colour constants
+    ├── ui/                  # the mod's own panels, copy and generated art
+    │   ├── PlantHover.cs          # world hover orchestrator (MonoBehaviour)
+    │   ├── PlantHoverPanel.cs     # the mod's own fallback plate (canvas/style/fit/position)
+    │   ├── PanelText.cs           # PlantInfo + DetailLevel → TMP-markup string
+    │   └── PanelSprite.cs         # generated 9-slice plate sprite
+    └── core/                # the mod's own logic — needs neither a game type nor a canvas
+        ├── Hotkey.cs              # movement-safe key checks (hold/press)
+        ├── Diagnostics.cs         # VerboseLogging-gated per-crop growth dump
+        └── WaterDiagnostics.cs    # VerboseLogging-gated "why no watered line" warning
+```
+
+**Enforced homes:**
+
+- `src/game/` — Harmony patches and live-game bridges: anything that reads or intercepts the running game
+- `src/ui/` — panels, widgets, presenters, panel copy and runtime-generated sprites
+- `src/core/` — the mod's own domain logic, config-gated diagnostics and input handling
+- `src/Plugin.cs` — the BepInEx entry point; must sit beside the `.csproj` at the `src/` root
+- `pack.ps1` — packaging script; workspace convention puts it at the mod root beside the docs
+- `scripts/` — repo tooling: the git-hook installer and the pre-commit formatter
+
+The seam between `game/` and the rest is the `PlantInfo` DTO: everything that touches a raw game
+growth type (`GrowableView`, `GrowStage`, `GrowPath`, the requirement components) sits in `game/`;
+everything downstream consumes `PlantInfo` and never sees a game type. `GameFonts`/`GamePalette` are
+game reads (font assets, sampled UI colours) and so live in `game/`, while `PanelSprite` is generated
+art and lives in `ui/` — matching ChestLabels, from which all three are vendored verbatim. Config
+binding stays in `Plugin.cs` rather than `core/`: BepInEx `ConfigEntry` binding is part of the plugin
+lifecycle, and the entry point is the only place that may reference BepInEx types directly.
+
+There is no `tests/` project — verification is in-game, per [TESTING.md](TESTING.md).
 
 ## Architecture at a glance
 
@@ -39,21 +97,21 @@ Hotkey ── movement-safe key checks
 | File | Responsibility | Exposes | Depends on | Seam (where change lands) |
 |---|---|---|---|---|
 | [src/Plugin.cs](src/Plugin.cs) (197) | Composition root: BepInEx entry, ~20 `ConfigEntry` bindings, startup log, wires `PlantHover` + patches `NameplateGuard` | `PluginGuid/Name/Version`, `DetailLevel`/`ExpandMode` enums, all config statics | BepInEx, HarmonyX | add a config knob; change startup wiring |
-| [src/PlantHover.cs](src/PlantHover.cs) (261) | `MonoBehaviour` hover orchestration: poll loop, expand-input, stand-down gate, world→screen projection. Delegates targeting, the fallback plate, and the nameplate | `PlantHover` component | PlantTargeting, PlantHoverPanel, GameNameplateBridge, GrowthReader, PanelText, Hotkey | add a poll/expand rule; change the show/hide decision |
-| [src/PlantHoverPanel.cs](src/PlantHoverPanel.cs) (185) | The mod's own fallback plate: builds the screen-space canvas + 9-sliced plate + text, styles/sizes it, positions it. Unaware of *when* to show (poll loop) or the nameplate (its canvas hosts the bridge's anchor, wired by the orchestrator) | `EnsureBuilt`, `Root`, `Activate`, `Deactivate`, `ShowPlate`, `HidePlate`, `PositionAt`, `IsActive` | GameFonts, GamePalette, PanelSprite, config | change the plate's build/style/fit |
-| [src/PlantTargeting.cs](src/PlantTargeting.cs) (134) | Resolve the camera (`Camera.main` null here) and the plant under cursor (interaction target, raycast fallback) | `ResolveCamera`, `ResolvePlant` | InteractionTarget, Diagnostics, game physics | change how the hovered plant is chosen |
-| [src/GameNameplateBridge.cs](src/GameNameplateBridge.cs) (158) | Draw the panel in the game's nameplate banner: anchor object, Show/Hide reveal-keying, shared-bubble tint cache/restore | `Available`, `Show`, `Hide`, `Reposition`, `EnsureAnchor` | game `NameplateScreen`, config | nameplate behaviour/tint |
-| [src/PanelText.cs](src/PanelText.cs) (234) | Pure formatting: `PlantInfo` + `DetailLevel` → TMP string; owns the met/unmet colour palette and the produce-vs-seed name choice | `PanelText.Format` | GrowthReader.PlantInfo, Requirements.State, GamePalette, config | change wording, colours, glyphs, detail layout |
-| [src/GrowthReader.cs](src/GrowthReader.cs) (438) | Read-only model: `GrowableView` → `PlantInfo` (both names, stage, harvest, water, chopped %, day estimate). No writes, no side-effecting game calls, **no presentation/diagnostics config** (reports both names; `PanelText` picks; water-warn delegated to `WaterDiagnostics`) | `GrowthReader.Read`, `PlantInfo`, `ReadStageCosts` | StageGraph, Requirements, GrowthPaths, WaterDiagnostics, game persistence | add a readable fact about a plant |
-| [src/Requirements.cs](src/Requirements.cs) (266) | Stage exit conditions → readable met/unmet/unknown lines, behind a **side-effect allowlist**; picks the best grow path | `Requirements.Read`, `State`, `Entry` | GrowthPaths, game requirement types | support a new requirement type (add to allowlist only after reading its check) |
-| [src/StageGraph.cs](src/StageGraph.cs) (115) | BFS over grow paths (growth only) → `StageMeasurement` (stage number, count, fully-grown), returned not mutated | `StageGraph.Measure`, `StageMeasurement`, `HasGrowthPath` | GrowthPaths, game GrowStage/GrowPath | change how stage position is computed |
-| [src/GrowthPaths.cs](src/GrowthPaths.cs) (33) | Single definition of "is this grow path the plant *growing*?" (excludes chop/damage paths) | `GrowthPaths.IsGrowthTransition` | game GrowPath/GrowStage | shared by StageGraph + Requirements so they can't diverge |
-| [src/InteractionTarget.cs](src/InteractionTarget.cs) (94) | Reads the game's own cursor-interaction target via reflection | `InteractionTarget.FindPlant` | HarmonyX AccessTools, game UI | game renames the private field |
-| [src/Hotkey.cs](src/Hotkey.cs) (58) | Key checks that survive a held movement key (not `KeyboardShortcut.IsPressed`) | `Hotkey.IsHeld`, `WasPressed` | BepInEx, UnityEngine.Input | change hold/toggle semantics |
-| [src/NameplateGuard.cs](src/NameplateGuard.cs) (48) | Harmony finalizer: swallows another mod's broken `NameplateScreen.Show` postfix so our label survives | patch class | HarmonyX | broaden/narrow the suppression (see debt P1) |
-| [src/Diagnostics.cs](src/Diagnostics.cs) (108) | `VerboseLogging`-gated one-off per-crop growth dump (settles the GrowthTime-order assumption) | `Diagnostics.LogPlantOnce` | GrowthReader.ReadStageCosts | change the diagnostic dump |
-| [src/WaterDiagnostics.cs](src/WaterDiagnostics.cs) (53) | `VerboseLogging`-gated once-per-crop "why no watered line" warning; self-gated so the read-only model can call it config-free. Split from `Diagnostics` by dependency direction (this is called *by* GrowthReader; Diagnostics calls *into* it) so neither forms a cycle | `WaterDiagnostics.WarnMissingWaterOnce` | game views (ViewsCollection), `PlantPeekPlugin` config/logger | change the water warning |
-| [src/GameFonts.cs](src/GameFonts.cs) · [GamePalette.cs](src/GamePalette.cs) · [PanelSprite.cs](src/PanelSprite.cs) | Shared look-and-feel (game font, palette, 9-sliced plate) | statics | UnityEngine, TMPro | **vendored VERBATIM from ChestLabels — fix bugs in both copies, do not diverge** |
+| [src/ui/PlantHover.cs](src/ui/PlantHover.cs) (261) | `MonoBehaviour` hover orchestration: poll loop, expand-input, stand-down gate, world→screen projection. Delegates targeting, the fallback plate, and the nameplate | `PlantHover` component | PlantTargeting, PlantHoverPanel, GameNameplateBridge, GrowthReader, PanelText, Hotkey | add a poll/expand rule; change the show/hide decision |
+| [src/ui/PlantHoverPanel.cs](src/ui/PlantHoverPanel.cs) (185) | The mod's own fallback plate: builds the screen-space canvas + 9-sliced plate + text, styles/sizes it, positions it. Unaware of *when* to show (poll loop) or the nameplate (its canvas hosts the bridge's anchor, wired by the orchestrator) | `EnsureBuilt`, `Root`, `Activate`, `Deactivate`, `ShowPlate`, `HidePlate`, `PositionAt`, `IsActive` | GameFonts, GamePalette, PanelSprite, config | change the plate's build/style/fit |
+| [src/game/PlantTargeting.cs](src/game/PlantTargeting.cs) (134) | Resolve the camera (`Camera.main` null here) and the plant under cursor (interaction target, raycast fallback) | `ResolveCamera`, `ResolvePlant` | InteractionTarget, Diagnostics, game physics | change how the hovered plant is chosen |
+| [src/game/GameNameplateBridge.cs](src/game/GameNameplateBridge.cs) (158) | Draw the panel in the game's nameplate banner: anchor object, Show/Hide reveal-keying, shared-bubble tint cache/restore | `Available`, `Show`, `Hide`, `Reposition`, `EnsureAnchor` | game `NameplateScreen`, config | nameplate behaviour/tint |
+| [src/ui/PanelText.cs](src/ui/PanelText.cs) (234) | Pure formatting: `PlantInfo` + `DetailLevel` → TMP string; owns the met/unmet colour palette and the produce-vs-seed name choice | `PanelText.Format` | GrowthReader.PlantInfo, Requirements.State, GamePalette, config | change wording, colours, glyphs, detail layout |
+| [src/game/GrowthReader.cs](src/game/GrowthReader.cs) (438) | Read-only model: `GrowableView` → `PlantInfo` (both names, stage, harvest, water, chopped %, day estimate). No writes, no side-effecting game calls, **no presentation/diagnostics config** (reports both names; `PanelText` picks; water-warn delegated to `WaterDiagnostics`) | `GrowthReader.Read`, `PlantInfo`, `ReadStageCosts` | StageGraph, Requirements, GrowthPaths, WaterDiagnostics, game persistence | add a readable fact about a plant |
+| [src/game/Requirements.cs](src/game/Requirements.cs) (266) | Stage exit conditions → readable met/unmet/unknown lines, behind a **side-effect allowlist**; picks the best grow path | `Requirements.Read`, `State`, `Entry` | GrowthPaths, game requirement types | support a new requirement type (add to allowlist only after reading its check) |
+| [src/game/StageGraph.cs](src/game/StageGraph.cs) (115) | BFS over grow paths (growth only) → `StageMeasurement` (stage number, count, fully-grown), returned not mutated | `StageGraph.Measure`, `StageMeasurement`, `HasGrowthPath` | GrowthPaths, game GrowStage/GrowPath | change how stage position is computed |
+| [src/game/GrowthPaths.cs](src/game/GrowthPaths.cs) (33) | Single definition of "is this grow path the plant *growing*?" (excludes chop/damage paths) | `GrowthPaths.IsGrowthTransition` | game GrowPath/GrowStage | shared by StageGraph + Requirements so they can't diverge |
+| [src/game/InteractionTarget.cs](src/game/InteractionTarget.cs) (94) | Reads the game's own cursor-interaction target via reflection | `InteractionTarget.FindPlant` | HarmonyX AccessTools, game UI | game renames the private field |
+| [src/core/Hotkey.cs](src/core/Hotkey.cs) (58) | Key checks that survive a held movement key (not `KeyboardShortcut.IsPressed`) | `Hotkey.IsHeld`, `WasPressed` | BepInEx, UnityEngine.Input | change hold/toggle semantics |
+| [src/game/NameplateGuard.cs](src/game/NameplateGuard.cs) (48) | Harmony finalizer: swallows another mod's broken `NameplateScreen.Show` postfix so our label survives | patch class | HarmonyX | broaden/narrow the suppression (see debt P1) |
+| [src/core/Diagnostics.cs](src/core/Diagnostics.cs) (108) | `VerboseLogging`-gated one-off per-crop growth dump (settles the GrowthTime-order assumption) | `Diagnostics.LogPlantOnce` | GrowthReader.ReadStageCosts | change the diagnostic dump |
+| [src/core/WaterDiagnostics.cs](src/core/WaterDiagnostics.cs) (53) | `VerboseLogging`-gated once-per-crop "why no watered line" warning; self-gated so the read-only model can call it config-free. Split from `Diagnostics` by dependency direction (this is called *by* GrowthReader; Diagnostics calls *into* it) so neither forms a cycle | `WaterDiagnostics.WarnMissingWaterOnce` | game views (ViewsCollection), `PlantPeekPlugin` config/logger | change the water warning |
+| [src/game/GameFonts.cs](src/game/GameFonts.cs) · [GamePalette.cs](src/game/GamePalette.cs) · [PanelSprite.cs](src/ui/PanelSprite.cs) | Shared look-and-feel (game font, palette, 9-sliced plate) | statics | UnityEngine, TMPro | **vendored VERBATIM from ChestLabels — fix bugs in both copies, do not diverge** |
 
 Dependency direction is clean: `PlantHover → {PlantTargeting, PlantHoverPanel, GameNameplateBridge,
 GrowthReader, PanelText, Hotkey}`; `PlantHoverPanel → {GameFonts, GamePalette, PanelSprite}`;

@@ -1,4 +1,4 @@
-// Copied verbatim from mods/ChestLabels/src/ChestLabels/GamePalette.cs, namespace aside.
+// Copied verbatim from mods/ChestLabels/src/game/GamePalette.cs, namespace aside.
 // Shared look-and-feel: see 10-visual-integration.md. Fix bugs in both copies.
 using UnityEngine;
 

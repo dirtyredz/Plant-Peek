@@ -102,32 +102,38 @@ Plant-Peek/
 ├── screenshots/               banner, thumbnail, and page captures
 ├── research/
 │   └── 01-growth-system.md    decompilation findings, and the two methods not to call
+├── scripts/                   git-hook installer and pre-commit formatter
+├── Directory.Build.props      workspace-synced canonical — do not hand-edit here
 └── src/
-    ├── Directory.Build.props
     ├── PlantPeek.csproj       builds + auto-deploys to BepInEx/plugins/MoonlightPeaksMods
-    ├── Plugin.cs              BepInEx entry point and config
-    ├── GrowthReader.cs        read-only model: plant → stage, water, day estimate
-    ├── Requirements.cs        stage exit conditions → readable met/unmet lines
-    ├── StageGraph.cs          stage position, walking growth paths only
-    ├── GrowthPaths.cs         one definition of "is this path growth?" (shared by the two above)
-    ├── InteractionTarget.cs   the plant the game itself is pointing at
-    ├── Hotkey.cs              key checks that survive a held movement key
-    ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
-    ├── WaterDiagnostics.cs    once-per-crop "why no watered line" warning, behind VerboseLogging
-    ├── NameplateGuard.cs      Harmony finalizer shielding the shared nameplate
-    ├── PlantHover.cs          world hover orchestration, adapted from ChestLabels/HoverLabel.cs
-    ├── PlantTargeting.cs      resolves the camera and the plant under the cursor
-    ├── PlantHoverPanel.cs     the mod's own fallback plate (canvas, style, fit, position)
-    ├── GameNameplateBridge.cs draws the panel in the game's own nameplate banner
-    ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
-    ├── GameFonts.cs           ┐
-    ├── GamePalette.cs         ├ copied verbatim from ChestLabels — fix bugs in both
-    └── PanelSprite.cs         ┘
+    ├── Plugin.cs              BepInEx entry point and config (stays beside the .csproj)
+    ├── game/                  reads and patches the live game — never writes the save
+    │   ├── GrowthReader.cs        read-only model: plant → stage, water, day estimate
+    │   ├── StageGraph.cs          stage position, walking growth paths only
+    │   ├── Requirements.cs        stage exit conditions → readable met/unmet lines
+    │   ├── GrowthPaths.cs         one definition of "is this path growth?" (shared by the two above)
+    │   ├── PlantTargeting.cs      resolves the camera and the plant under the cursor
+    │   ├── InteractionTarget.cs   the plant the game itself is pointing at
+    │   ├── GameNameplateBridge.cs draws the panel in the game's own nameplate banner
+    │   ├── NameplateGuard.cs      Harmony finalizer shielding the shared nameplate
+    │   ├── GameFonts.cs           ┐ copied verbatim from ChestLabels — fix bugs in both
+    │   └── GamePalette.cs         ┘
+    ├── ui/                    the mod's own panels, copy and generated art
+    │   ├── PlantHover.cs          world hover orchestration, adapted from ChestLabels/HoverLabel.cs
+    │   ├── PlantHoverPanel.cs     the mod's own fallback plate (canvas, style, fit, position)
+    │   ├── PanelText.cs           formats a PlantInfo into the panel's TMP string
+    │   └── PanelSprite.cs         copied verbatim from ChestLabels — fix bugs in both
+    └── core/                  needs neither a game type nor a canvas
+        ├── Hotkey.cs              key checks that survive a held movement key
+        ├── Diagnostics.cs         one-off per-crop growth dump, behind VerboseLogging
+        └── WaterDiagnostics.cs    once-per-crop "why no watered line" warning, behind VerboseLogging
 ```
 
-There is no project subdirectory under `src/`: this mod is a single project, so the extra level
-named after the mod said nothing. Chest Labels keeps one because it has two projects to
-separate.
+Sources are foldered by responsibility — `game/` for anything that reads or patches the running game,
+`ui/` for the panel, `core/` for the rest — with `Plugin.cs` alone at the `src/` root because BepInEx
+wants the entry point beside the `.csproj`. `STRUCTURE.md`'s `## Layout` section is the enforced
+contract. There is still no project subdirectory named after the mod: this is a single project, so that
+extra level said nothing. Chest Labels keeps one because it has two projects to separate.
 
 ## Visual integration
 
@@ -174,7 +180,7 @@ Worth keeping the findings, since the same ground gets retrodden:
   widget rather than forcing alpha.
 
 With this gone the mod's only Harmony patch is `NameplateGuard` (a finalizer that shields the
-shared nameplate from another mod's broken postfix — see `src/NameplateGuard.cs`); `HarmonyLib`
+shared nameplate from another mod's broken postfix — see `src/game/NameplateGuard.cs`); `HarmonyLib`
 is otherwise used only for `AccessTools` reflection in `InteractionTarget`.
 
 ## Targeting
