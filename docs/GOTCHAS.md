@@ -57,6 +57,9 @@ Non-obvious traps. Each: **trap → why → do instead.** Deep audit in
 - **`ExpandTrigger = Click` does not intercept the click** → the game still harvests/scythes the plant. →
   `Hold` is the default for that reason.
 
+- Estimated palette values in `GamePalette`/`PanelSprite` are screenshot-derived, not asset-sampled —
+  re-check if colours look off.
+
 ## Structure
 
 - **`NameplateGuard` finalizer is global** → it runs for every `NameplateScreen.Show` and can mask a

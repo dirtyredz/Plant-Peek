@@ -47,3 +47,10 @@ when work is ready. `/gate status` shows what's pending.
 
 _See the workspace root [CLAUDE.md](../../CLAUDE.md) for multi-repo conventions and the release/publish
 chain._
+
+## Work items (Docket)
+
+Track work in `docs/items/` through `dk`. Use filtered `dk list --json` and `dk show`; use `add`, `set`,
+and `link` for changes. Never invent IDs or ranks. Claim work in the current worktree, release it when
+finished, and run `dk check` before pushing. Drop items instead of deleting them. Living docs remain
+ordinary Markdown.

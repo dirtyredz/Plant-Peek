@@ -1,93 +1,11 @@
 # BACKLOG — Plant Peek
 
-Prioritized trough of deferred work. P0 = do next / harmful now · P1 = real debt worth scheduling ·
-P2 = nice-to-have. Structural items seeded by the 2026-08-22 full review (see
-[../STRUCTURE.md](../STRUCTURE.md) → Structural debt).
+Work items now live in [`items/`](items/), one file per item, managed with Docket (`dk`).
 
-## P0
-- _(none open)_
+- Open work: `dk list`
+- Everything, including done and dropped: `dk list --all`
+- Add an item: `dk add --type task --priority P2 --title "..."`
+- Change status: `dk set <id> --status wip|done|dropped`
 
-## P1 — structural debt worth scheduling
-- [x] **P1-a — Extract `GameNameplateBridge` from `PlantHover`.** ✅ Done 2026-08-22 — anchor object,
-  Show/Hide reveal-keying, and shared-bubble tint cache/restore now live in `GameNameplateBridge`;
-  `PlantHover` delegates. Compile-verified, and **validated in-game 2026-08-22** (nameplate show/hide,
-  reveal animation, and tint restore all correct).
-- [x] **P1-b — Extract `PlantTargeting` from `PlantHover`.** ✅ Done 2026-08-22 — camera resolution +
-  plant raycast/interaction-target selection moved out; `PlantHover` keeps the stand-down gate and
-  no-camera warning. Behaviour-preserving, compile-verified.
-- [x] **P1-c — `NameplateGuard` finalizer scope.** ✅ Resolved 2026-08-22 — **decision: keep it global**
-  (deliberate good-citizen design). It suppresses TypeLoad/TypeInit/MissingMember exceptions for every
-  `NameplateScreen.Show`, which incidentally keeps the game's own and other mods' nameplates working when
-  a broken tooltip mod's postfix throws. Codex rated the broad scope P0, but the owner chose the safety
-  net over scoping to our own panel. Not a bug; documented in DECISIONS + GOTCHAS. Revisit only if the
-  global suppression is ever seen to mask a real failure.
-- [x] **P1-d — Centralize growth-path classification.** ✅ Done 2026-08-22 — extracted
-  `GrowthPaths.IsGrowthTransition`, now used by both `StageGraph` and `Requirements`, fixing the bug
-  where a chop path could outrank the real growth path (blank/wrong "waiting on"). **Validated in-game
-  2026-08-22** against trees / spreading / regrowing crops.
-- [~] **P1-e — `TryPeek<T>` persistence helper. Abandoned (investigated).** The shared
-  `GuidPersistenceList<T>` base does not resolve without deeper assembly spelunking than the payoff
-  justifies; forcing a helper of unknown signature would be over-abstraction. The two `TryGetByGuid`
-  peeks stay as-is, each with its "never FindOrCreate" comment (also captured in GOTCHAS). Revisit only
-  if the base type is confirmed cheaply.
-
-## P2 — nice-to-have
-- [x] **P2-f — Extract `PlantHoverPanel` (the fallback plate) from `PlantHover`.** ✅ Done 2026-08-22 —
-  canvas/plate/text build, style, fit, and plate positioning now live in `PlantHoverPanel`; `PlantHover`
-  keeps the poll loop and the world→screen projection and hands the screen point to both drawers.
-  Positioning decision: the **orchestrator projects** (only it has camera + plant), each **drawer applies**
-  the point to its own object — so `PlantHover.Reposition` calls `panel.PositionAt` and
-  `nameplate.Reposition`. The nameplate anchor still parents under the panel's canvas (its coordinate
-  host), wired by the orchestrator so `PlantHoverPanel` stays unaware of the nameplate. `PlantHover`
-  795 → 261 lines. Compile-verified, and **validated in-game 2026-08-22** (fallback plate builds,
-  styles, and tracks the plant with `UseGameNameplate = false`).
-- [x] **P2-a — Stop the model leaking presentation/diagnostics config.** ✅ Done 2026-08-22 — `PlantInfo`
-  now carries both `PlantedItemName` + `ProduceName` and `PanelText.ResolveName` makes the `UseProduceName`
-  choice; `WarnOnce`/`CountWaterables`/`WarnedCrops` moved into `WaterDiagnostics.WarnMissingWaterOnce`
-  (self-gated on `VerboseLogging`). Landed in its own file rather than `Diagnostics` because `Diagnostics`
-  already calls `GrowthReader.ReadStageCosts`, so co-locating would have made model↔diagnostics a cycle
-  (caught by the componentization review). `GrowthReader` now reads no presentation/diagnostics config.
-  Compile-verified.
-- [x] **P2-b — `StageGraph.Measure` returns a `StageMeasurement`.** ✅ Done 2026-08-22 — `Measure` now
-  returns a `StageMeasurement` (StageNumber/StageCount/IsFullyGrown) and `GrowthReader.Read` copies it
-  onto `PlantInfo`, removing the wrong-direction dependency of the graph utility on one consumer's
-  aggregate. Compile-verified. (Promoting `PlantInfo` to its own file was *not* done here and is still
-  deferred — folded into P2-c, which already eyes `GrowthReader` sub-file seams.)
-- [ ] **P2-c — Latent sub-file seams in `GrowthReader`** (438 lines, cohesive today): a `GrowthTiming`
-  (`EstimateDaysLeft` + `ReadStageCosts`, already a 2nd caller in `Diagnostics`) and a `WaterState`
-  facet; also the `PlantInfo` model type could move to its own file here. Do only if the file grows past
-  ~600 lines.
-- [ ] **P2-d — Dedup addon/stage resolution** shared by `GrowthReader.Read` and `Diagnostics.LogPlantOnce`
-  (`view.GridObjectPersistence.ItemAsset → GrowableAddon → GrowStageContainer.CachedGrowStages`) behind a
-  `TryResolveAddon`/`ReadStages` helper.
-- [ ] **P2-g — "log once per crop" idiom** (`HashSet<string>` keyed by item name, add-then-log) now
-  appears in both `Diagnostics.LogPlantOnce` and `WaterDiagnostics.WarnMissingWaterOnce`. Two ~3-line
-  copies in separate files — a shared `LogOncePerCrop(set, key, Action)` helper is tempting but borders
-  on over-abstraction for two callers, and a shared home would re-couple the two diagnostics. Left as-is;
-  revisit only if a third caller appears.
-- [ ] **P2-e — Verify authored `GrowthTime` parameter order** — the day estimate assumes GrowthTime item
-  parameters are in stage order (inferred, not proven). Use `VerboseLogging`'s growth dump against real
-  crops to confirm/adjust. (Pre-existing known-unknown, see README.)
-
-## Known unknowns (from research)
-- Estimated palette values in `GamePalette`/`PanelSprite` are screenshot-derived, not asset-sampled —
-  re-check if colours look off.
-
-_Living doc — refresh with /project-docs when it drifts._
-
-## Placement follow-ups (from the 2026-09-01 structure review)
-
-Raised by the review of the `src/` regrouping. Placement and accuracy items, not defects.
-
-- **P2 — `game/` is carrying two concerns (10 of 18 files).** It holds both the growth *model*
-  (`GrowthReader`, `StageGraph`, `Requirements`, `GrowthPaths` — pure interpretation of the game's
-  grow-graph) and the live interop bridges (`PlantTargeting`, `InteractionTarget`,
-  `GameNameplateBridge`, `NameplateGuard`, `GameFonts`, `GamePalette`). They have different churn
-  histories and different seams. Consider `game/growth/` as a sub-seam, or promoting the growth model
-  to its own top-level component — it is arguably the mod's real domain. Two more interop files tip
-  `game/` over the 12-file flat-bucket cap.
-- **P2 — tighten the three `PlantInfo` seam leaks.** `ui/PlantHover.cs` holds a raw `GrowableView`
-  and reads `.transform.position` (could move into `PlantTargeting`); `core/Diagnostics.cs` and
-  `core/WaterDiagnostics.cs` both take a `GrowableView`. STRUCTURE.md and README now describe these
-  as exceptions rather than claiming they do not exist; fixing them would let the stronger claim
-  return.
+Moved in from the old hand-edited list on 2026-10-05 (14 entries: 6 open, 7 done, 1 dropped).
+The previous version is in git history.
