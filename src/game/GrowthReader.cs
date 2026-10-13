@@ -417,7 +417,7 @@ namespace PlantPeek
             return costs;
         }
 
-        private static int IndexOfStage(List<GrowStage> stages, string guid)
+        private static int IndexOfStage(IReadOnlyList<GrowStage> stages, string guid)
         {
             if (stages == null || string.IsNullOrEmpty(guid))
             {

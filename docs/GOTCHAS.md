@@ -67,3 +67,5 @@ Non-obvious traps. Each: **trap → why → do instead.** Deep audit in
   backlogged (P1-c) and needs in-game validation.
 
 _Living doc — refresh with /project-docs when it drifts._
+
+- **1.3.9 compatibility (2026-10-12):** `GrowStageContainer.CachedGrowStages` is now `GrowStage[]` (was `List`); helpers take `IReadOnlyList<GrowStage>`, diagnostics use `.Length`. Always delete `src/bin` and `src/obj` before rebuilding after a game update - a plain build reuses stale IL. Runtime-unverified until play-tested.

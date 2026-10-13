@@ -37,7 +37,7 @@ namespace PlantPeek
             var builder = new StringBuilder();
             builder.Append($"[growth data] {itemAsset.Name} ({key})");
             builder.Append($"\n  produce      : {addon.GetProduceItemAsset()?.Name ?? "(none)"}");
-            builder.Append($"\n  stages       : {stages?.Count ?? 0}");
+            builder.Append($"\n  stages       : {stages?.Length ?? 0}");
             builder.Append($"\n  stage costs  : [{string.Join(", ", costs)}]  (sum {Sum(costs)})");
             builder.Append($"\n  total growth : {addon.GetTotalGrowthTime(out var paramStages)} over {paramStages} parameter(s)");
             builder.Append($"\n  regrowth     : {addon.GetRegrowthTime()}");
@@ -45,7 +45,7 @@ namespace PlantPeek
 
             if (stages != null)
             {
-                for (var i = 0; i < stages.Count; i++)
+                for (var i = 0; i < stages.Length; i++)
                 {
                     var stage = stages[i];
                     if (stage == null)

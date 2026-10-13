@@ -43,7 +43,7 @@ namespace PlantPeek
             }
         }
 
-        internal static StageMeasurement Measure(List<GrowStage> stages, GrowStage current)
+        internal static StageMeasurement Measure(IReadOnlyList<GrowStage> stages, GrowStage current)
         {
             if (stages == null || stages.Count == 0)
             {
