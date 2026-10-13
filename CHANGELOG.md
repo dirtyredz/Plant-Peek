@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 - 2026-10-12
+
+Compatibility with Moonlight Peaks 1.3.9.
+
+- Fixed the growth tooltip not reading a plant's stages: the game changed how a plant stores its list of growth stages, which broke the lookup.
+
 ## 1.0.1 - 2026-08-20
 
 **Fix: the plant tooltip could stop working after the Moonlight Peaks 1.2.3 update.** 1.2.3
